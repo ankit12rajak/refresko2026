@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { gsap } from 'gsap'
 import './Hero.css'
@@ -8,11 +8,16 @@ const Hero = () => {
   const [displayText, setDisplayText] = useState('')
   const targetText = 'REFRESKO 2026'
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+='
+  const decodeTimerRef = useRef(null)
 
-  useEffect(() => {
-    // Decoding text animation
+  const startDecode = useCallback(() => {
     let iteration = 0
-    const interval = setInterval(() => {
+
+    if (decodeTimerRef.current) {
+      clearInterval(decodeTimerRef.current)
+    }
+
+    decodeTimerRef.current = setInterval(() => {
       setDisplayText(
         targetText
           .split('')
@@ -27,14 +32,24 @@ const Hero = () => {
       )
 
       if (iteration >= targetText.length) {
-        clearInterval(interval)
+        clearInterval(decodeTimerRef.current)
+        decodeTimerRef.current = null
       }
 
       iteration += 1 / 2
     }, 40)
+  }, [chars, targetText])
 
-    return () => clearInterval(interval)
-  }, [])
+  useEffect(() => {
+    // Decoding text animation
+    startDecode()
+
+    return () => {
+      if (decodeTimerRef.current) {
+        clearInterval(decodeTimerRef.current)
+      }
+    }
+  }, [startDecode])
 
   // Magnetic button effect
   useEffect(() => {
@@ -92,6 +107,7 @@ const Hero = () => {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 1 }}
+          onMouseEnter={startDecode}
         >
           {displayText}
         </motion.h1>
@@ -116,7 +132,7 @@ const Hero = () => {
             <span>REGISTER</span>
           </button>
           <button className="btn-secondary magnetic-btn glass interactive">
-            <span>BUY TICKETS</span>
+            <span>CONTRIBUTE</span>
           </button>
         </motion.div>
       </div>

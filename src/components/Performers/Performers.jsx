@@ -104,7 +104,7 @@ const Performers = () => {
       </div>
 
       <div className="performers-indicator">
-        <span className="indicator-text">COGNIZANCE 2026</span>
+        <span className="indicator-text">Refresko 2026</span>
       </div>
     </section>
   )
