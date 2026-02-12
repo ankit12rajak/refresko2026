@@ -1,0 +1,516 @@
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import './SKFDashboard.css'
+
+// Default data structure
+const defaultStudentData = {
+  name: 'John Doe',
+  studentId: 'SKF2024001',
+  email: 'john.doe@skf.edu',
+  department: 'Computer Science',
+  year: '3rd Year',
+  phone: '+91 98765 43210',
+  avatar: null,
+  registeredEvents: ['Tech Quiz', 'Hackathon'],
+  contributionStatus: 'Volunteer'
+}
+
+const mockPaymentData = {
+  transactionId: 'TXN2024RF001234',
+  amount: '₹500',
+  paymentDate: '2026-02-10',
+  paymentMethod: 'UPI',
+  status: 'Paid',
+  description: 'Refresko 2026 - SKF Student Registration',
+  breakdown: [
+    { item: 'Base Registration', amount: '₹300' },
+    { item: 'Event Access Pass', amount: '₹150' },
+    { item: 'Merchandise Voucher', amount: '₹50' }
+  ]
+}
+
+const SKFDashboard = () => {
+  const navigate = useNavigate()
+  const [activeSection, setActiveSection] = useState('home')
+  const [student, setStudent] = useState(defaultStudentData)
+  const [payment] = useState(mockPaymentData)
+
+  useEffect(() => {
+    document.body.classList.add('system-cursor')
+    
+    // Check authentication
+    const isAuthenticated = localStorage.getItem('isAuthenticated')
+    const profileCompleted = localStorage.getItem('profileCompleted')
+    
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+    
+    if (profileCompleted !== 'true') {
+      navigate('/profile-setup')
+      return
+    }
+    
+    // Load student profile from localStorage
+    const savedProfile = localStorage.getItem('studentProfile')
+    if (savedProfile) {
+      try {
+        const profileData = JSON.parse(savedProfile)
+        setStudent({
+          ...defaultStudentData,
+          name: profileData.name || defaultStudentData.name,
+          studentId: profileData.studentId || defaultStudentData.studentId,
+          email: profileData.email || defaultStudentData.email,
+          department: profileData.department || defaultStudentData.department,
+          year: profileData.year || defaultStudentData.year,
+          phone: profileData.phone || defaultStudentData.phone
+        })
+      } catch (error) {
+        console.error('Error loading profile:', error)
+      }
+    }
+    
+    return () => {
+      document.body.classList.remove('system-cursor')
+    }
+  }, [navigate])
+
+  const handleLogout = () => {
+    // Clear authentication data
+    localStorage.removeItem('isAuthenticated')
+    localStorage.removeItem('profileCompleted')
+    localStorage.removeItem('studentProfile')
+    localStorage.removeItem('loginEmail')
+    
+    // Redirect to home
+    navigate('/')
+  }
+
+  // Generate QR code data URL (in production, use a proper QR library)
+  const generateQRCode = () => {
+    // This creates a simple placeholder. In production, use qrcode.react or similar
+    const qrData = `SKF-PASS-${student.studentId}-REFRESKO2026`
+    return qrData
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0, x: 20 },
+    visible: { 
+      opacity: 1, 
+      x: 0,
+      transition: { duration: 0.5, ease: 'easeOut' }
+    },
+    exit: { 
+      opacity: 0, 
+      x: -20,
+      transition: { duration: 0.3 }
+    }
+  }
+
+  return (
+    <div className="dashboard-page">
+      <div className="hex-grid-overlay" />
+      
+      <Link to="/" className="back-home">
+        <span>← Back to Home</span>
+      </Link>
+
+      <div className="dashboard-layout">
+        {/* Sidebar Navigation */}
+        <motion.aside 
+          className="dashboard-sidebar"
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="sidebar-header">
+            <div className="sidebar-logo">SKF</div>
+            <span className="sidebar-title">DASHBOARD</span>
+          </div>
+
+          <nav className="sidebar-nav">
+            <button 
+              className={`nav-item ${activeSection === 'home' ? 'active' : ''}`}
+              onClick={() => setActiveSection('home')}
+            >
+              <span className="nav-icon">🏠</span>
+              <span className="nav-label">Home</span>
+            </button>
+            <button 
+              className={`nav-item ${activeSection === 'gatepass' ? 'active' : ''}`}
+              onClick={() => setActiveSection('gatepass')}
+            >
+              <span className="nav-icon">🎫</span>
+              <span className="nav-label">Gate Pass</span>
+            </button>
+            <button 
+              className={`nav-item ${activeSection === 'receipt' ? 'active' : ''}`}
+              onClick={() => setActiveSection('receipt')}
+            >
+              <span className="nav-icon">🧾</span>
+              <span className="nav-label">Receipt</span>
+            </button>
+          </nav>
+
+          <div className="sidebar-footer">
+            <button className="logout-btn" onClick={handleLogout}>
+              <span className="nav-icon">🚪</span>
+              <span className="nav-label">Logout</span>
+            </button>
+          </div>
+        </motion.aside>
+
+        {/* Main Content Area */}
+        <main className="dashboard-main">
+          <AnimatePresence mode="wait">
+            {/* HOME SECTION */}
+            {activeSection === 'home' && (
+              <motion.div
+                key="home"
+                className="dashboard-section home-section"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div className="section-header">
+                  <h1 className="section-title">Welcome Back!</h1>
+                  <p className="section-subtitle">Manage your Refresko 2026 experience</p>
+                </div>
+
+                {/* Student Details Card */}
+                <div className="student-card">
+                  <div className="card-header">
+                    <h2>Student Profile</h2>
+                    <span className="status-badge active">Active</span>
+                  </div>
+                  <div className="student-info">
+                    <div className="student-avatar">
+                      <div className="avatar-placeholder">
+                        {student.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                    </div>
+                    <div className="student-details">
+                      <div className="detail-row">
+                        <span className="detail-label">Name</span>
+                        <span className="detail-value">{student.name}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Student ID</span>
+                        <span className="detail-value">{student.studentId}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Email</span>
+                        <span className="detail-value">{student.email}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Department</span>
+                        <span className="detail-value">{student.department}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Year</span>
+                        <span className="detail-value">{student.year}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="detail-label">Phone</span>
+                        <span className="detail-value">{student.phone}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Cards */}
+                <div className="action-cards">
+                  {/* Contribute to Fest Card */}
+                  <motion.div 
+                    className="action-card contribute-card"
+                    whileHover={{ scale: 1.02, y: -5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="action-icon">🎯</div>
+                    <h3>Contribute to Fest</h3>
+                    <p>Join our team and help make Refresko 2026 unforgettable! Volunteer opportunities available.</p>
+                    <div className="contribution-options">
+                      <label className="contribution-option">
+                        <input type="radio" name="contribution" value="volunteer" />
+                        <span>Volunteer</span>
+                      </label>
+                      <label className="contribution-option">
+                        <input type="radio" name="contribution" value="coordinator" />
+                        <span>Event Coordinator</span>
+                      </label>
+                      <label className="contribution-option">
+                        <input type="radio" name="contribution" value="sponsor" />
+                        <span>Sponsor Liaison</span>
+                      </label>
+                    </div>
+                    <button className="action-btn">
+                      <span>Apply to Contribute</span>
+                    </button>
+                  </motion.div>
+
+                  {/* Register for Events Card */}
+                  <motion.div 
+                    className="action-card events-card"
+                    whileHover={{ scale: 1.02, y: -5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="action-icon">🎪</div>
+                    <h3>Register for Events</h3>
+                    <p>Explore and register for exciting events at Refresko 2026!</p>
+                    
+                    {student.registeredEvents.length > 0 && (
+                      <div className="registered-events">
+                        <span className="events-label">Your Registered Events:</span>
+                        <div className="events-tags">
+                          {student.registeredEvents.map((event, index) => (
+                            <span key={index} className="event-tag">{event}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <button className="action-btn secondary">
+                      <span>Browse All Events</span>
+                    </button>
+                  </motion.div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="quick-stats">
+                  <div className="stat-item">
+                    <span className="stat-value">{student.registeredEvents.length}</span>
+                    <span className="stat-label">Events Registered</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-value">{student.contributionStatus}</span>
+                    <span className="stat-label">Contribution Status</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-value">✓</span>
+                    <span className="stat-label">Payment Complete</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* GATE PASS SECTION */}
+            {activeSection === 'gatepass' && (
+              <motion.div
+                key="gatepass"
+                className="dashboard-section gatepass-section"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div className="section-header">
+                  <h1 className="section-title">Gate Pass</h1>
+                  <p className="section-subtitle">Your digital entry pass for Refresko 2026</p>
+                </div>
+
+                <div className="gatepass-card">
+                  <div className="gatepass-header">
+                    <div className="gatepass-logo">
+                      <span className="logo-text">REFRESKO</span>
+                      <span className="logo-year">2026</span>
+                    </div>
+                    <span className="pass-type">SKF STUDENT PASS</span>
+                  </div>
+
+                  <div className="qr-container">
+                    <div className="qr-code">
+                      {/* QR Code Placeholder - In production use qrcode.react */}
+                      <div className="qr-placeholder">
+                        <svg viewBox="0 0 100 100" className="qr-svg">
+                          {/* Simulated QR pattern */}
+                          <rect x="10" y="10" width="20" height="20" fill="currentColor"/>
+                          <rect x="70" y="10" width="20" height="20" fill="currentColor"/>
+                          <rect x="10" y="70" width="20" height="20" fill="currentColor"/>
+                          <rect x="35" y="10" width="5" height="5" fill="currentColor"/>
+                          <rect x="45" y="10" width="5" height="5" fill="currentColor"/>
+                          <rect x="55" y="10" width="5" height="5" fill="currentColor"/>
+                          <rect x="35" y="20" width="5" height="5" fill="currentColor"/>
+                          <rect x="50" y="20" width="5" height="5" fill="currentColor"/>
+                          <rect x="35" y="35" width="5" height="5" fill="currentColor"/>
+                          <rect x="45" y="35" width="5" height="5" fill="currentColor"/>
+                          <rect x="55" y="35" width="5" height="5" fill="currentColor"/>
+                          <rect x="65" y="35" width="5" height="5" fill="currentColor"/>
+                          <rect x="35" y="45" width="5" height="5" fill="currentColor"/>
+                          <rect x="50" y="45" width="5" height="5" fill="currentColor"/>
+                          <rect x="60" y="45" width="5" height="5" fill="currentColor"/>
+                          <rect x="35" y="55" width="5" height="5" fill="currentColor"/>
+                          <rect x="45" y="55" width="5" height="5" fill="currentColor"/>
+                          <rect x="55" y="55" width="5" height="5" fill="currentColor"/>
+                          <rect x="70" y="55" width="5" height="5" fill="currentColor"/>
+                          <rect x="80" y="45" width="5" height="5" fill="currentColor"/>
+                          <rect x="75" y="65" width="5" height="5" fill="currentColor"/>
+                          <rect x="85" y="70" width="5" height="5" fill="currentColor"/>
+                          <rect x="40" y="70" width="5" height="5" fill="currentColor"/>
+                          <rect x="50" y="75" width="5" height="5" fill="currentColor"/>
+                          <rect x="60" y="70" width="5" height="5" fill="currentColor"/>
+                          <rect x="45" y="85" width="5" height="5" fill="currentColor"/>
+                          <rect x="55" y="85" width="5" height="5" fill="currentColor"/>
+                          <rect x="65" y="85" width="5" height="5" fill="currentColor"/>
+                        </svg>
+                      </div>
+                      <div className="qr-glow"></div>
+                    </div>
+                    <p className="qr-instruction">Scan at entry gate for verification</p>
+                  </div>
+
+                  <div className="pass-details">
+                    <div className="pass-detail-row">
+                      <span className="pass-label">Pass Holder</span>
+                      <span className="pass-value">{student.name}</span>
+                    </div>
+                    <div className="pass-detail-row">
+                      <span className="pass-label">Student ID</span>
+                      <span className="pass-value">{student.studentId}</span>
+                    </div>
+                    <div className="pass-detail-row">
+                      <span className="pass-label">Pass Code</span>
+                      <span className="pass-value code">{generateQRCode()}</span>
+                    </div>
+                    <div className="pass-detail-row">
+                      <span className="pass-label">Valid For</span>
+                      <span className="pass-value">All Days - March 15-17, 2026</span>
+                    </div>
+                  </div>
+
+                  <div className="pass-footer">
+                    <span className="pass-status valid">✓ VALID PASS</span>
+                    <button className="download-btn">
+                      <span>📥 Download Pass</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pass-instructions">
+                  <h3>Entry Instructions</h3>
+                  <ul>
+                    <li>Present this QR code at the main entrance</li>
+                    <li>Keep your Student ID ready for verification</li>
+                    <li>This pass grants access to all SKF student areas</li>
+                    <li>Lost pass? Contact support at help@refresko.com</li>
+                  </ul>
+                </div>
+              </motion.div>
+            )}
+
+            {/* RECEIPT SECTION */}
+            {activeSection === 'receipt' && (
+              <motion.div
+                key="receipt"
+                className="dashboard-section receipt-section"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div className="section-header">
+                  <h1 className="section-title">Payment Receipt</h1>
+                  <p className="section-subtitle">Your payment confirmation and details</p>
+                </div>
+
+                <div className="receipt-card">
+                  <div className="receipt-header">
+                    <div className="receipt-logo">
+                      <span className="logo-text">REFRESKO</span>
+                      <span className="logo-year">2026</span>
+                    </div>
+                    <div className="receipt-badge">
+                      <span className={`payment-status ${payment.status.toLowerCase()}`}>
+                        ✓ {payment.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="receipt-body">
+                    <div className="receipt-title">
+                      <h2>Payment Receipt</h2>
+                      <span className="receipt-number">#{payment.transactionId}</span>
+                    </div>
+
+                    <div className="receipt-info">
+                      <div className="info-group">
+                        <span className="info-label">Paid By</span>
+                        <span className="info-value">{student.name}</span>
+                      </div>
+                      <div className="info-group">
+                        <span className="info-label">Student ID</span>
+                        <span className="info-value">{student.studentId}</span>
+                      </div>
+                      <div className="info-group">
+                        <span className="info-label">Email</span>
+                        <span className="info-value">{student.email}</span>
+                      </div>
+                      <div className="info-group">
+                        <span className="info-label">Payment Date</span>
+                        <span className="info-value">{new Date(payment.paymentDate).toLocaleDateString('en-IN', { 
+                          day: 'numeric', 
+                          month: 'long', 
+                          year: 'numeric' 
+                        })}</span>
+                      </div>
+                      <div className="info-group">
+                        <span className="info-label">Payment Method</span>
+                        <span className="info-value">{payment.paymentMethod}</span>
+                      </div>
+                    </div>
+
+                    <div className="receipt-breakdown">
+                      <h3>Payment Breakdown</h3>
+                      <div className="breakdown-items">
+                        {payment.breakdown.map((item, index) => (
+                          <div key={index} className="breakdown-row">
+                            <span className="item-name">{item.item}</span>
+                            <span className="item-amount">{item.amount}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="breakdown-total">
+                        <span>Total Amount</span>
+                        <span className="total-amount">{payment.amount}</span>
+                      </div>
+                    </div>
+
+                    <div className="receipt-description">
+                      <span className="desc-label">Description</span>
+                      <span className="desc-value">{payment.description}</span>
+                    </div>
+                  </div>
+
+                  <div className="receipt-footer">
+                    <div className="receipt-stamp">
+                      <div className="stamp-inner">
+                        <span>PAID</span>
+                      </div>
+                    </div>
+                    <div className="receipt-actions">
+                      <button className="receipt-btn">
+                        <span>📥 Download Receipt</span>
+                      </button>
+                      <button className="receipt-btn secondary">
+                        <span>📧 Email Receipt</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="receipt-note">
+                    <p>This is a computer-generated receipt and does not require a signature.</p>
+                    <p>For any queries, contact: finance@refresko.com</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+    </div>
+  )
+}
+
+export default SKFDashboard

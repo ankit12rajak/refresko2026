@@ -6,6 +6,8 @@ import App from './App.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import ComingSoonPage from './pages/ComingSoonPage.jsx'
+import ProfileSetup from './pages/ProfileSetup.jsx'
+import SKFDashboard from './pages/SKFDashboard.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -14,6 +16,8 @@ createRoot(document.getElementById('root')).render(
         <Route path="/" element={<App />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
+        <Route path="/dashboard" element={<SKFDashboard />} />
         <Route
           path="/events"
           element={

@@ -31,6 +31,19 @@ body {
   cursor: none;
 }
 
+body.system-cursor {
+  cursor: auto;
+}
+
+body.system-cursor a,
+body.system-cursor button,
+body.system-cursor input,
+body.system-cursor textarea,
+body.system-cursor select,
+body.system-cursor label {
+  cursor: auto;
+}
+
 a {
   text-decoration: none;
   color: inherit;

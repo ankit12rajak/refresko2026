@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import './Register.css'
@@ -13,6 +13,14 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   })
+
+  useEffect(() => {
+    document.body.classList.add('system-cursor')
+
+    return () => {
+      document.body.classList.remove('system-cursor')
+    }
+  }, [])
 
   const availableEvents = [
     'Coding Competition',
