@@ -72,7 +72,7 @@ const Performers = () => {
   }, [activePerformer])
 
   return (
-    <section id="performers" ref={sectionRef} className="performers">
+    <section id="performers" ref={sectionRef} className="performers" data-particle-shape="2">
       <div className="performers-header">
         <motion.span
           className="performers-label"

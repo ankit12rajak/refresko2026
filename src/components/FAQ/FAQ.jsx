@@ -45,7 +45,7 @@ const FAQ = () => {
   }
 
   return (
-    <section id="faq" ref={sectionRef} className="faq">
+    <section id="faq" ref={sectionRef} className="faq" data-particle-shape="5">
       <div className="faq-visual">
         {/* Globe visualization through particle canvas */}
         <div className="globe-placeholder">

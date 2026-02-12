@@ -56,28 +56,30 @@ const Navbar = () => {
           <span className="logo-year">2026</span>
         </div>
 
-        <ul className="nav-links">
-          {navLinks.map((link, index) => (
-            <motion.li
-              key={link.label}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              {link.to ? (
-                <Link className="nav-link interactive" to={link.to}>
-                  {link.label}
-                  <span className="link-underline" />
-                </Link>
-              ) : (
-                <a className="nav-link interactive" href={link.href}>
-                  {link.label}
-                  <span className="link-underline" />
-                </a>
-              )}
-            </motion.li>
-          ))}
-        </ul>
+        <div className="nav-links-glass-box">
+          <ul className="nav-links">
+            {navLinks.map((link, index) => (
+              <motion.li
+                key={link.label}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                {link.to ? (
+                  <Link className="nav-link interactive" to={link.to}>
+                    {link.label}
+                    <span className="link-underline" />
+                  </Link>
+                ) : (
+                  <a className="nav-link interactive" href={link.href}>
+                    {link.label}
+                    <span className="link-underline" />
+                  </a>
+                )}
+              </motion.li>
+            ))}
+          </ul>
+        </div>
 
         <div className="nav-actions">
          

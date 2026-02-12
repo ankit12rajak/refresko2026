@@ -7,7 +7,7 @@ const About = () => {
   const isInView = useInView(sectionRef, { once: true, margin: '-100px' })
 
   return (
-    <section id="about" ref={sectionRef} className="about">
+    <section id="about" ref={sectionRef} className="about" data-particle-shape="1">
       <span className="bg-text about-bg-text">ABOUT</span>
       
       <motion.h2

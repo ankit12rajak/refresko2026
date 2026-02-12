@@ -88,7 +88,7 @@ const Hero = () => {
   }, [])
 
   return (
-    <section id="home" className="hero">
+    <section id="home" className="hero" data-particle-shape="0">
       <div className="hero-content">
         <motion.p
           className="hero-pretitle"

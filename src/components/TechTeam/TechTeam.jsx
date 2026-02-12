@@ -7,20 +7,25 @@ const teamMembers = [
     id: 1,
     name: 'ANKIT RAJAK',
     role: 'Full Stack Developer',
+    department: 'CSE 3rd Year',
     initial: 'AR',
-    color: '#FF0033'
+    color: '#FF0033',
+    image: '/AnkitRajak.jpeg'
   },
   {
     id: 2,
     name: 'KOUSHIK DAS',
     role: 'Full Stack Developer',
+    department: 'CSE 3rd Year',
     initial: 'KD',
-    color: '#FF1A4D'
+    color: '#FF1A4D',
+    image: '/KoushikDas.jpeg'
   },
   {
     id: 3,
     name: 'PRITAM GHOSH',
     role: 'Full Stack Developer',
+    department: 'CSE 3rd Year',
     initial: 'PG',
     color: '#FF3366'
   },
@@ -28,6 +33,7 @@ const teamMembers = [
     id: 4,
     name: 'PRANJAL DAS',
     role: 'Full Stack Developer',
+    department: 'CSE 3rd Year',
     initial: 'PD',
     color: '#CC0029'
   },
@@ -35,6 +41,7 @@ const teamMembers = [
     id: 5,
     name: 'RAJESH MONDOL',
     role: 'Full Stack Developer',
+    department: 'CSE 3rd Year',
     initial: 'RM',
     color: '#E6002E'
   },
@@ -42,6 +49,7 @@ const teamMembers = [
     id: 6,
     name: 'ANKIT PAL',
     role: 'Full Stack Developer',
+    department: 'CSE 3rd Year',
     initial: 'AP',
     color: '#FF4D79'
   }
@@ -76,7 +84,7 @@ const TechTeam = () => {
   }, [activeMember])
 
   return (
-    <section id="tech-team" ref={sectionRef} className="tech-team">
+    <section id="tech-team" ref={sectionRef} className="tech-team" data-particle-shape="4">
       <div className="tech-team-header">
         <motion.span
           className="tech-team-label"
@@ -123,17 +131,28 @@ const TechTeam = () => {
                 <div className="member-role-badge">{member.role}</div>
                 <div className="member-image-wrapper">
                   <div className="member-avatar-placeholder" style={{ background: `linear-gradient(135deg, ${member.color}30, ${member.color}10)` }}>
-                    <span className="avatar-initial" style={{ color: member.color }}>{member.initial}</span>
-                    <div className="avatar-hex-bg">
-                      {[...Array(6)].map((_, i) => (
-                        <div key={i} className="hex" style={{ animationDelay: `${i * 0.3}s`, borderColor: `${member.color}20` }} />
-                      ))}
-                    </div>
+                    {member.image ? (
+                      <img 
+                        src={member.image} 
+                        alt={member.name} 
+                        className="member-photo"
+                        style={{ borderColor: member.color }}
+                      />
+                    ) : (
+                      <>
+                        <span className="avatar-initial" style={{ color: member.color }}>{member.initial}</span>
+                        <div className="avatar-hex-bg">
+                          {[...Array(6)].map((_, i) => (
+                            <div key={i} className="hex" style={{ animationDelay: `${i * 0.3}s`, borderColor: `${member.color}20` }} />
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="member-overlay">
                     <div className="member-info">
                       <h3 className="member-name">{member.name}</h3>
-                      <p className="member-role-text">{member.role}</p>
+                      <p className="member-role-text">{member.department}</p>
                     </div>
                   </div>
                 </div>

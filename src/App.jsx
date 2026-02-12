@@ -10,6 +10,7 @@ import TechTeam from './components/TechTeam/TechTeam'
 import FAQ from './components/FAQ/FAQ'
 import Footer from './components/Footer/Footer'
 import CustomCursor from './components/CustomCursor/CustomCursor'
+import ParticleCanvas from './components/ParticleCanvas/ParticleCanvas'
 import './App.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -43,6 +44,7 @@ function App() {
   return (
     <div className="app">
       <CustomCursor />
+      <ParticleCanvas />
       <div className="hex-grid-overlay" />
       <div ref={mainRef} className="main-content">
         <Navbar />

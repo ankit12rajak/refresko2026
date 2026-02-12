@@ -156,29 +156,81 @@ function ParticleCanvas() {
       col[idx * 3 + 2] = 0.0
     }
 
-    const generateProcessor = (pos, col, count, indices) => {
+    const generateSKFBook = (pos, col, count, indices) => {
       const shapeLimit = Math.floor(count * 0.55)
+      // Book rectangle: [-8, 8] x [-6, 6]
+      // Heart/book-spine cutout at top-left: two overlapping circles
+      const hc1x = -6, hc2x = -4, hcy = 4, hr = 2.2, hrSq = hr * hr
+
       for (let i = 0; i < count; i++) {
         let idx = indices ? indices[i] : i
         if (i < shapeLimit) {
-          let x, y, z
-          if (Math.random() > 0.6) {
-            let edge = Math.floor(Math.random() * 4)
-            let val = (Math.random() - 0.5) * 12
-            if (edge === 0) { x = val; y = 6 }
-            else if (edge === 1) { x = val; y = -6 }
-            else if (edge === 2) { x = 6; y = val }
-            else { x = -6; y = val }
-            z = (Math.random() - 0.5) * 0.5
+          let x, y, z = (Math.random() - 0.5) * 0.4
+          const type = Math.random()
+
+          if (type < 0.18) {
+            // Heart/book spine arcs — the distinctive open-book curves
+            if (Math.random() > 0.5) {
+              // Left lobe arc (faces upper-left corner)
+              const t = Math.PI / 3 + Math.random() * (4 * Math.PI / 3)
+              x = hc1x + hr * Math.cos(t)
+              y = hcy + hr * Math.sin(t)
+            } else {
+              // Right lobe arc (faces upper area)
+              const t = -2 * Math.PI / 3 + Math.random() * (4 * Math.PI / 3)
+              x = hc2x + hr * Math.cos(t)
+              y = hcy + hr * Math.sin(t)
+            }
+            x = Math.max(-8, Math.min(8, x))
+            y = Math.max(-6, Math.min(6, y))
+            x += (Math.random() - 0.5) * 0.2
+            y += (Math.random() - 0.5) * 0.2
+            // Bright highlight on arcs
+            col[idx * 3] = 1.0
+            col[idx * 3 + 1] = 0.15 + Math.random() * 0.15
+            col[idx * 3 + 2] = Math.random() * 0.1
+          } else if (type < 0.38) {
+            // Rectangle border outline
+            const edge = Math.random()
+            if (edge < 0.28) {
+              x = (Math.random() - 0.5) * 16; y = -6
+            } else if (edge < 0.53) {
+              x = 8; y = (Math.random() - 0.5) * 12
+            } else if (edge < 0.75) {
+              x = -1.5 + Math.random() * 9.5; y = 6
+            } else {
+              x = -8; y = -6 + Math.random() * 8
+            }
+            x += (Math.random() - 0.5) * 0.15
+            y += (Math.random() - 0.5) * 0.15
+            col[idx * 3] = 0.95 + Math.random() * 0.05
+            col[idx * 3 + 1] = Math.random() * 0.08
+            col[idx * 3 + 2] = Math.random() * 0.05
           } else {
-            x = (Math.floor(Math.random() * 10) - 4.5) * 1.0 + (Math.random() - 0.5) * 0.2
-            y = (Math.floor(Math.random() * 10) - 4.5) * 1.0 + (Math.random() - 0.5) * 0.2
-            z = 0
+            // Interior fill — reject points in the heart cutout
+            let valid = false, tries = 0
+            do {
+              x = (Math.random() - 0.5) * 16
+              y = (Math.random() - 0.5) * 12
+              tries++
+              if (x < -1.5 && y > 1.5) {
+                const d1 = (x - hc1x) * (x - hc1x) + (y - hcy) * (y - hcy)
+                const d2 = (x - hc2x) * (x - hc2x) + (y - hcy) * (y - hcy)
+                valid = d1 <= hrSq || d2 <= hrSq
+              } else {
+                valid = true
+              }
+            } while (!valid && tries < 15)
+            x += (Math.random() - 0.5) * 0.15
+            y += (Math.random() - 0.5) * 0.15
+            col[idx * 3] = 0.75 + Math.random() * 0.25
+            col[idx * 3 + 1] = Math.random() * 0.06
+            col[idx * 3 + 2] = Math.random() * 0.04
           }
-          pos[idx * 3] = x; pos[idx * 3 + 1] = y; pos[idx * 3 + 2] = z
-          col[idx * 3] = 0.9 + Math.random() * 0.1
-          col[idx * 3 + 1] = Math.random() * 0.15
-          col[idx * 3 + 2] = Math.random() * 0.15
+
+          pos[idx * 3] = x
+          pos[idx * 3 + 1] = y
+          pos[idx * 3 + 2] = z
         } else {
           applyAmbient(pos, col, idx)
         }
@@ -335,7 +387,7 @@ function ParticleCanvas() {
     }
 
     const SHAPES = [
-      { name: "Core Processor", generator: generateProcessor },
+      { name: "SKF Book", generator: generateSKFBook },
       { name: "Quantum Atom", generator: generateAtom },
       { name: "Signal Wave", generator: generateWifi },
       { name: "Cyber Globe", generator: generateCyberGlobe },

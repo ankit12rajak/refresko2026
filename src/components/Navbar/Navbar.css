@@ -44,10 +44,51 @@
   text-shadow: 0 0 10px var(--color-primary);
 }
 
+.nav-links-glass-box {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 0, 51, 0.3);
+  border-radius: 12px;
+  padding: 18px 35px;
+  box-shadow: 0 0 20px rgba(255, 0, 51, 0.15),
+              inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.nav-links-glass-box::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 12px;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(255, 0, 51, 0.4) 0%, 
+    rgba(255, 0, 51, 0.1) 50%, 
+    rgba(255, 0, 51, 0.4) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.nav-links-glass-box:hover {
+  box-shadow: 0 0 30px rgba(255, 0, 51, 0.25),
+              inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 0, 51, 0.5);
+}
+
+.nav-links-glass-box:hover::before {
+  opacity: 1;
+}
+
 .nav-links {
   display: flex;
   list-style: none;
   gap: 40px;
+  margin: 0;
 }
 
 .nav-link {

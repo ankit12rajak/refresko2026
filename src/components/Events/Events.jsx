@@ -46,7 +46,7 @@ const Events = () => {
   const gridEvents = events.filter(e => !e.featured)
 
   return (
-    <section id="events" ref={sectionRef} className="events">
+    <section id="events" ref={sectionRef} className="events" data-particle-shape="3">
       <motion.h2
         className="section-title events-title"
         initial={{ opacity: 0, y: 30 }}
