@@ -35,6 +35,8 @@ const SKFDashboard = () => {
   const [activeSection, setActiveSection] = useState('home')
   const [student, setStudent] = useState(defaultStudentData)
   const [payment] = useState(mockPaymentData)
+  const [showFoodModal, setShowFoodModal] = useState(false)
+  const [foodPreference, setFoodPreference] = useState('')
 
   useEffect(() => {
     document.body.classList.add('system-cursor')
@@ -86,6 +88,23 @@ const SKFDashboard = () => {
     
     // Redirect to home
     navigate('/')
+  }
+
+  const handleMakePayment = () => {
+    setShowFoodModal(true)
+  }
+
+  const handleProceedToPayment = () => {
+    if (foodPreference) {
+      // Save food preference to localStorage
+      localStorage.setItem('foodPreference', foodPreference)
+      // Navigate to payment gateway
+      navigate('/payment-gateway')
+    }
+  }
+
+  const handleFoodSelect = (preference) => {
+    setFoodPreference(preference)
   }
 
   // Generate QR code data URL (in production, use a proper QR library)
@@ -229,25 +248,22 @@ const SKFDashboard = () => {
                     whileHover={{ scale: 1.02, y: -5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="action-icon">🎯</div>
+                    <div className="action-icon">💳</div>
                     <h3>Contribute to Fest</h3>
-                    <p>Join our team and help make Refresko 2026 unforgettable! Volunteer opportunities available.</p>
-                    <div className="contribution-options">
-                      <label className="contribution-option">
-                        <input type="radio" name="contribution" value="volunteer" />
-                        <span>Volunteer</span>
-                      </label>
-                      <label className="contribution-option">
-                        <input type="radio" name="contribution" value="coordinator" />
-                        <span>Event Coordinator</span>
-                      </label>
-                      <label className="contribution-option">
-                        <input type="radio" name="contribution" value="sponsor" />
-                        <span>Sponsor Liaison</span>
-                      </label>
+                    <p>Complete your registration by making the fest payment. Select your food preference and proceed to payment.</p>
+                    <div className="payment-highlight">
+                      <div className="payment-amount">
+                        <span className="amount-label">Registration Fee</span>
+                        <span className="amount-value">₹500</span>
+                      </div>
+                      <div className="payment-includes">
+                        <span>✓ All Event Access</span>
+                        <span>✓ Food & Refreshments</span>
+                        <span>✓ Merchandise Voucher</span>
+                      </div>
                     </div>
-                    <button className="action-btn">
-                      <span>Apply to Contribute</span>
+                    <button className="action-btn" onClick={handleMakePayment}>
+                      <span>Make Payment</span>
                     </button>
                   </motion.div>
 
@@ -509,6 +525,93 @@ const SKFDashboard = () => {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Food Preference Modal */}
+      <AnimatePresence>
+        {showFoodModal && (
+          <>
+            <motion.div
+              className="modal-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFoodModal(false)}
+            />
+            <motion.div
+              className="food-modal"
+              initial={{ opacity: 0, scale: 0.9, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 50 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="modal-header">
+                <h2>Select Food Preference</h2>
+                <button className="modal-close" onClick={() => setShowFoodModal(false)}>×</button>
+              </div>
+              <div className="modal-body">
+                <p className="modal-description">
+                  Choose your preferred meal type for Refresko 2026
+                </p>
+                <div className="food-options">
+                  <label 
+                    className={`food-option ${foodPreference === 'VEG' ? 'selected' : ''}`}
+                    onClick={() => handleFoodSelect('VEG')}
+                  >
+                    <div className="food-icon">🥗</div>
+                    <div className="food-details">
+                      <span className="food-type">Vegetarian</span>
+                      <span className="food-desc">Pure veg meals</span>
+                    </div>
+                    <div className="food-radio">
+                      <input
+                        type="radio"
+                        name="foodPreference"
+                        value="VEG"
+                        checked={foodPreference === 'VEG'}
+                        onChange={() => handleFoodSelect('VEG')}
+                      />
+                    </div>
+                  </label>
+                  <label 
+                    className={`food-option ${foodPreference === 'NON-VEG' ? 'selected' : ''}`}
+                    onClick={() => handleFoodSelect('NON-VEG')}
+                  >
+                    <div className="food-icon">🍗</div>
+                    <div className="food-details">
+                      <span className="food-type">Non-Vegetarian</span>
+                      <span className="food-desc">Includes meat options</span>
+                    </div>
+                    <div className="food-radio">
+                      <input
+                        type="radio"
+                        name="foodPreference"
+                        value="NON-VEG"
+                        checked={foodPreference === 'NON-VEG'}
+                        onChange={() => handleFoodSelect('NON-VEG')}
+                      />
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  className="modal-btn cancel" 
+                  onClick={() => setShowFoodModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="modal-btn proceed"
+                  onClick={handleProceedToPayment}
+                  disabled={!foodPreference}
+                >
+                  Proceed to Payment
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
