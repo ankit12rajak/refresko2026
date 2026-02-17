@@ -268,8 +268,13 @@ const PaymentGateway = () => {
         }
 
         await cpanelApi.submitPayment(formData)
+        console.log('Payment successfully submitted to database')
       } catch (apiError) {
-        console.warn('cPanel API payment submission failed, using localStorage fallback:', apiError)
+        console.error('Payment submission to database failed:', apiError)
+        const errorMessage = apiError.message || apiError.toString()
+        setFormError(`Payment submission failed: ${errorMessage}. Your payment data will be saved locally, but may not appear across devices until the issue is resolved. Please contact support if this persists.`)
+        setPaymentStatus('idle')
+        return
       }
     }
     

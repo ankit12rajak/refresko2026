@@ -34,66 +34,102 @@ function admin_login(): void
 
 function admin_create(): void
 {
-    $payload = get_json_input();
-    require_fields($payload, ['email', 'password', 'role']);
-
-    $name = trim((string)($payload['name'] ?? ''));
-    $email = strtolower(trim((string)$payload['email']));
-    $password = (string)$payload['password'];
-    $role = strtolower(trim((string)$payload['role']));
-
-    if (!in_array($role, ['admin', 'superadmin'], true)) {
-        json_response(['success' => false, 'message' => 'Invalid role'], 422);
-    }
-
-    if (strlen($password) < 8) {
-        json_response(['success' => false, 'message' => 'Password must be at least 8 characters'], 422);
-    }
-
-    $hash = password_hash($password, PASSWORD_BCRYPT);
-    if ($name === '') {
-        $name = $email;
-    }
-
-    $pdo = db();
-    $stmt = $pdo->prepare('INSERT INTO admin_users (display_name, email, password_hash, role, is_active)
-                           VALUES (:display_name, :email, :password_hash, :role, 1)');
-
     try {
+        $payload = get_json_input();
+        require_fields($payload, ['email', 'password', 'role']);
+
+        $name = trim((string)($payload['name'] ?? ''));
+        $email = strtolower(trim((string)$payload['email']));
+        $password = (string)$payload['password'];
+        $role = strtolower(trim((string)$payload['role']));
+
+        if (!in_array($role, ['admin', 'superadmin'], true)) {
+            json_response(['success' => false, 'message' => 'Invalid role'], 422);
+        }
+
+        if (strlen($password) < 8) {
+            json_response(['success' => false, 'message' => 'Password must be at least 8 characters'], 422);
+        }
+
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+        if ($name === '') {
+            $name = $email;
+        }
+
+        $pdo = db();
+        
+        // Check if table exists first
+        $checkTable = $pdo->query("SHOW TABLES LIKE 'admin_users'")->fetch();
+        if (!$checkTable) {
+            json_response([
+                'success' => false, 
+                'message' => 'admin_users table does not exist. Please run the SQL setup script.',
+                'hint' => 'Run cpanel_backend_api/sql/04_create_admin_table.sql on your database'
+            ], 500);
+        }
+        
+        $stmt = $pdo->prepare('INSERT INTO admin_users (display_name, email, password_hash, role, is_active)
+                               VALUES (:display_name, :email, :password_hash, :role, 1)');
+
         $stmt->execute([
             ':display_name' => $name,
             ':email' => $email,
             ':password_hash' => $hash,
             ':role' => $role,
         ]);
-    } catch (Throwable $error) {
-        json_response(['success' => false, 'message' => 'Unable to create admin', 'error' => $error->getMessage()], 500);
-    }
 
-    json_response(['success' => true, 'message' => 'Admin created'], 201);
+        json_response(['success' => true, 'message' => 'Admin created'], 201);
+    } catch (PDOException $error) {
+        // Check for duplicate email error
+        if ($error->getCode() === '23000') {
+            json_response(['success' => false, 'message' => 'Email already exists'], 409);
+        }
+        json_response(['success' => false, 'message' => 'Database error: ' . $error->getMessage()], 500);
+    } catch (Throwable $error) {
+        json_response(['success' => false, 'message' => 'Unable to create admin: ' . $error->getMessage()], 500);
+    }
 }
 
 function admin_list(): void
 {
-    $pdo = db();
-    $stmt = $pdo->query('SELECT id, display_name, email, role, is_active, created_at
-                         FROM admin_users
-                         ORDER BY id DESC');
-    $rows = $stmt->fetchAll();
+    try {
+        $pdo = db();
+        
+        // Check if table exists first
+        $checkTable = $pdo->query("SHOW TABLES LIKE 'admin_users'")->fetch();
+        if (!$checkTable) {
+            json_response([
+                'success' => false, 
+                'message' => 'admin_users table does not exist. Please run the SQL setup script.',
+                'hint' => 'Run cpanel_backend_api/sql/04_create_admin_table.sql on your database'
+            ], 500);
+        }
+        
+        $stmt = $pdo->query('SELECT id, display_name, email, role, is_active, created_at
+                             FROM admin_users
+                             ORDER BY id DESC');
+        $rows = $stmt->fetchAll();
 
-    $admins = array_map(static function (array $row): array {
-        return [
-            'id' => 'ADM' . $row['id'],
-            'db_id' => (int)$row['id'],
-            'name' => $row['display_name'] ?: $row['email'],
-            'email' => $row['email'],
-            'role' => $row['role'],
-            'status' => ((int)$row['is_active'] === 1) ? 'active' : 'inactive',
-            'createdAt' => $row['created_at'],
-        ];
-    }, $rows);
+        $admins = array_map(static function (array $row): array {
+            return [
+                'id' => 'ADM' . $row['id'],
+                'db_id' => (int)$row['id'],
+                'name' => $row['display_name'] ?: $row['email'],
+                'email' => $row['email'],
+                'role' => $row['role'],
+                'status' => ((int)$row['is_active'] === 1) ? 'active' : 'inactive',
+                'createdAt' => $row['created_at'],
+            ];
+        }, $rows);
 
-    json_response(['success' => true, 'admins' => $admins]);
+        json_response(['success' => true, 'admins' => $admins]);
+    } catch (Throwable $error) {
+        json_response([
+            'success' => false, 
+            'message' => 'Database error: ' . $error->getMessage(),
+            'hint' => 'Make sure admin_users table exists. Run cpanel_backend_api/sql/04_create_admin_table.sql'
+        ], 500);
+    }
 }
 
 function admin_update(): void

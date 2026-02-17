@@ -63,8 +63,29 @@ function payments_submit_with_upload(): void
     $foodIncluded = filter_var($_POST['food_included'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $foodPreference = normalize_food_preference($_POST['food_preference'] ?? null);
 
-    if ($studentCode === '' || $studentName === '' || $utrNo === '' || $paymentId === '' || $transactionId === '' || $amount <= 0) {
-        json_response(['success' => false, 'message' => 'Missing required payment fields'], 422);
+    // Validate required fields
+    if ($studentCode === '') {
+        json_response(['success' => false, 'message' => 'student_code is required'], 422);
+    }
+    
+    if ($studentName === '') {
+        json_response(['success' => false, 'message' => 'student_name is required'], 422);
+    }
+    
+    if ($utrNo === '') {
+        json_response(['success' => false, 'message' => 'utr_no is required'], 422);
+    }
+    
+    if ($paymentId === '') {
+        json_response(['success' => false, 'message' => 'payment_id is required'], 422);
+    }
+    
+    if ($transactionId === '') {
+        json_response(['success' => false, 'message' => 'transaction_id is required'], 422);
+    }
+    
+    if ($amount <= 0) {
+        json_response(['success' => false, 'message' => 'amount must be greater than 0'], 422);
     }
 
     if ($foodIncluded && !in_array($foodPreference, ['VEG', 'NON-VEG'], true)) {
@@ -75,12 +96,12 @@ function payments_submit_with_upload(): void
         $foodPreference = null;
     }
 
-    $proof = store_payment_proof('screenshot');
-
     $pdo = db();
     $pdo->beginTransaction();
 
     try {
+        $proof = store_payment_proof('screenshot');
+
         $studentUpsert = $pdo->prepare('INSERT INTO students (
                                             student_code,
                                             name,
@@ -206,7 +227,9 @@ function payments_submit_with_upload(): void
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        json_response(['success' => false, 'message' => 'Unable to submit payment', 'error' => $error->getMessage()], 500);
+        error_log('Payment submission error: ' . $error->getMessage());
+        error_log('Payment submission trace: ' . $error->getTraceAsString());
+        json_response(['success' => false, 'message' => 'Unable to submit payment: ' . $error->getMessage()], 500);
     }
 }
 
