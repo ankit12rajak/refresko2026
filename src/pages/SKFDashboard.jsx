@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import QRCode from 'qrcode'
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import { cpanelApi } from '../lib/cpanelApi'
 import { getActivePaymentOption, loadPaymentConfig } from '../lib/paymentConfig'
 import './SKFDashboard.css'
 
@@ -35,9 +37,78 @@ const SKFDashboard = () => {
   const configuredPaymentAmount = Number(activePaymentOption?.amount) || 600
   const isFoodIncluded = Boolean(activePaymentOption?.includeFood)
 
-  const findLatestStudentPayment = (profileData) => {
+  // Fetch payment status from database (cross-device sync)
+  const fetchPaymentStatusFromDatabase = async (studentCode) => {
+    if (!studentCode) return null
+
+    try {
+      // Try cPanel API first
+      if (cpanelApi.isConfigured()) {
+        try {
+          const response = await cpanelApi.listPayments()
+          if (response.success && Array.isArray(response.payments)) {
+            const studentPayment = response.payments
+              .filter(p => (p.student_code || '').trim().toUpperCase() === studentCode.trim().toUpperCase())
+              .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))[0]
+            
+            if (studentPayment) {
+              return {
+                status: studentPayment.status,
+                payment_approved: studentPayment.payment_approved,
+                amount: studentPayment.amount,
+                utrNo: studentPayment.utr_no,
+                transactionId: studentPayment.utr_no,
+                date: studentPayment.created_at
+              }
+            }
+          }
+        } catch (apiError) {
+          console.warn('API fetch failed, trying Supabase:', apiError)
+        }
+      }
+
+      // Try Supabase as fallback
+      if (isSupabaseConfigured && supabase) {
+        const { data: studentData, error } = await supabase
+          .from('students')
+          .select('payment_completion, gate_pass_created, payment_approved')
+          .eq('student_code', studentCode.trim().toUpperCase())
+          .single()
+
+        if (!error && studentData) {
+          // Get latest payment from payments table
+          const { data: paymentsData } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('student_code', studentCode.trim().toUpperCase())
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (paymentsData) {
+            return {
+              status: paymentsData.status || (studentData.payment_approved === 'approved' ? 'completed' : 'pending'),
+              payment_approved: studentData.payment_approved,
+              amount: paymentsData.amount,
+              utrNo: paymentsData.utr_no,
+              transactionId: paymentsData.utr_no,
+              date: paymentsData.created_at
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch payment status from database:', error)
+    }
+    return null
+  }
+
+  const findLatestStudentPayment = async (profileData) => {
     const studentId = profileData?.studentId || ''
     const studentEmail = profileData?.email || localStorage.getItem('loginEmail') || ''
+
+    // First, try to get status from database (cross-device sync)
+    const dbPaymentStatus = await fetchPaymentStatusFromDatabase(studentId)
 
     try {
       const savedPayments = localStorage.getItem('paymentSubmissions')
@@ -51,25 +122,60 @@ const SKFDashboard = () => {
           })
         : []
 
-      if (!studentPayments.length) {
+      if (!studentPayments.length && !dbPaymentStatus) {
         setLatestPayment(null)
         return
       }
 
-      const latest = [...studentPayments].sort((a, b) => {
+      const latest = studentPayments.length > 0 ? [...studentPayments].sort((a, b) => {
         const timeA = new Date(a.date || 0).getTime()
         const timeB = new Date(b.date || 0).getTime()
         return timeB - timeA
-      })[0]
+      })[0] : null
 
-      const normalizedAmount = Number(latest?.amount)
+      // Merge database status with localStorage data (database takes priority)
+      const normalizedAmount = Number(latest?.amount || dbPaymentStatus?.amount)
       const nextAmount = normalizedAmount > 0 && normalizedAmount !== 500 ? normalizedAmount : configuredPaymentAmount
-      setLatestPayment({
-        ...latest,
-        amount: nextAmount
-      })
+      
+      const finalPaymentData = {
+        ...(latest || {}),
+        ...(dbPaymentStatus || {}),
+        amount: nextAmount,
+        // Database status takes priority for approval/status
+        status: dbPaymentStatus?.status || latest?.status || 'pending',
+        payment_approved: dbPaymentStatus?.payment_approved || latest?.payment_approved || latest?.paymentApproved || 'pending',
+        paymentApproved: dbPaymentStatus?.payment_approved || latest?.paymentApproved || latest?.payment_approved || 'pending'
+      }
+
+      setLatestPayment(finalPaymentData)
+
+      // Update localStorage with database status for offline use
+      if (dbPaymentStatus && latest && studentPayments.length > 0) {
+        const updatedPayments = allPayments.map(payment => {
+          const paymentStudentCode = payment.studentCode || payment.studentId || ''
+          if (paymentStudentCode === studentId) {
+            return {
+              ...payment,
+              status: dbPaymentStatus.status,
+              payment_approved: dbPaymentStatus.payment_approved,
+              paymentApproved: dbPaymentStatus.payment_approved
+            }
+          }
+          return payment
+        })
+        localStorage.setItem('paymentSubmissions', JSON.stringify(updatedPayments))
+      }
     } catch {
-      setLatestPayment(null)
+      // If localStorage fails but we have DB status, use that
+      if (dbPaymentStatus) {
+        setLatestPayment({
+          ...dbPaymentStatus,
+          amount: dbPaymentStatus.amount || configuredPaymentAmount,
+          paymentApproved: dbPaymentStatus.payment_approved
+        })
+      } else {
+        setLatestPayment(null)
+      }
     }
   }
 
@@ -136,12 +242,18 @@ const SKFDashboard = () => {
       setPaymentConfig(loadPaymentConfig())
     }
 
+    // Periodic polling to check database for payment status updates (cross-device sync)
+    const pollInterval = setInterval(() => {
+      syncPaymentStatus()
+    }, 15000) // Check every 15 seconds
+
     window.addEventListener('storage', handleStorageUpdate)
     window.addEventListener('paymentSubmissionsUpdated', syncPaymentStatus)
     window.addEventListener('paymentConfigUpdated', handlePaymentConfigUpdate)
     
     return () => {
       document.body.classList.remove('system-cursor')
+      clearInterval(pollInterval)
       window.removeEventListener('storage', handleStorageUpdate)
       window.removeEventListener('paymentSubmissionsUpdated', syncPaymentStatus)
       window.removeEventListener('paymentConfigUpdated', handlePaymentConfigUpdate)
