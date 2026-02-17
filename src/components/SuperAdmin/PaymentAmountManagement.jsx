@@ -47,37 +47,14 @@ const PaymentAmountManagement = () => {
   }), [activeOptionId, draftOptions])
 
   useEffect(() => {
-    let isMounted = true
-
-    const generatePreviewQr = async () => {
-      if (!activeOption) {
-        setPreviewQrCodeUrl('')
-        return
-      }
-
-      try {
-        const qrDataUrl = await QRCode.toDataURL(getUpiPayload(activeOption), {
-          width: 220,
-          margin: 1,
-          errorCorrectionLevel: 'H'
-        })
-
-        if (isMounted) {
-          setPreviewQrCodeUrl(qrDataUrl)
-        }
-      } catch {
-        if (isMounted) {
-          setPreviewQrCodeUrl('')
-        }
-      }
+    // Use uploaded QR code if available, otherwise use static QR
+    const currentActiveOption = draftOptions.find(opt => opt.id === activeOptionId)
+    if (currentActiveOption?.qrCodeUrl) {
+      setPreviewQrCodeUrl(currentActiveOption.qrCodeUrl)
+    } else {
+      setPreviewQrCodeUrl('/image.png')
     }
-
-    generatePreviewQr()
-
-    return () => {
-      isMounted = false
-    }
-  }, [activeOption])
+  }, [activeOption, draftOptions, activeOptionId])
 
   const handleOptionChange = (optionId, field, value) => {
     setDraftOptions((previous) => previous.map((option) => {
@@ -107,6 +84,33 @@ const PaymentAmountManagement = () => {
         [field]: value
       }
     }))
+  }
+
+  const handleQrCodeUpload = (optionId, event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file (PNG, JPG, or WEBP)')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const qrCodeDataUrl = e.target.result
+      setDraftOptions((previous) => previous.map((option) => {
+        if (option.id === optionId) {
+          return { ...option, qrCodeUrl: qrCodeDataUrl }
+        }
+        return option
+      }))
+      
+      // Update preview immediately if this is the active option
+      if (optionId === activeOptionId) {
+        setPreviewQrCodeUrl(qrCodeDataUrl)
+      }
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSaveSettings = async () => {
@@ -158,6 +162,23 @@ const PaymentAmountManagement = () => {
                   />
                   <span>Use this QR for students</span>
                 </label>
+
+                <div className="qr-upload-row">
+                  <label className="qr-upload-label">
+                    Upload QR Code Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => handleQrCodeUpload(option.id, event)}
+                      className="qr-upload-input"
+                    />
+                  </label>
+                  {option.qrCodeUrl && (
+                    <div className="qr-thumbnail">
+                      <img src={option.qrCodeUrl} alt="QR Preview" />
+                    </div>
+                  )}
+                </div>
 
                 <div className="option-inputs">
                   <label>

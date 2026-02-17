@@ -88,14 +88,11 @@ const PaymentGateway = () => {
       }
 
       try {
-        const qrDataUrl = await QRCode.toDataURL(getUpiPayload(activePaymentOption), {
-          width: 220,
-          margin: 1,
-          errorCorrectionLevel: 'H'
-        })
-
+        // Use uploaded QR code from config if available, otherwise fallback to static
+        const qrCodePath = activePaymentOption.qrCodeUrl || '/image.png'
+        
         if (isMounted) {
-          setPaymentQrCodeUrl(qrDataUrl)
+          setPaymentQrCodeUrl(qrCodePath)
         }
       } catch {
         if (isMounted) {
@@ -390,7 +387,7 @@ const PaymentGateway = () => {
                   {paymentQrCodeUrl ? (
                     <img
                       src={paymentQrCodeUrl}
-                      alt={`Payment QR for ₹${activePaymentOption?.amount || 600}`}
+                      alt="Paytm QR Code - Scan to Pay"
                       className="payment-qr"
                     />
                   ) : (
