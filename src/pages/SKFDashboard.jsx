@@ -535,7 +535,7 @@ const SKFDashboard = () => {
                   </motion.div>
 
                   {/* Register for Events Card */}
-                  <motion.div 
+                  {/* <motion.div 
                     className="action-card events-card"
                     whileHover={{ scale: 1.02, y: -5 }}
                     transition={{ duration: 0.3 }}
@@ -558,7 +558,7 @@ const SKFDashboard = () => {
                     <button className="action-btn secondary">
                       <span>Browse All Events</span>
                     </button>
-                  </motion.div>
+                  </motion.div> */}
                 </div>
 
               </motion.div>
