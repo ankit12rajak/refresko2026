@@ -100,6 +100,10 @@ function payments_submit_with_upload(): void
     $pdo->beginTransaction();
 
     try {
+        // Debug logging for file upload
+        error_log('Payment submission - FILES array: ' . print_r($_FILES, true));
+        error_log('Payment submission - Content-Type: ' . ($_SERVER['CONTENT_TYPE'] ?? 'not set'));
+        
         $proof = store_payment_proof('screenshot');
 
         $studentUpsert = $pdo->prepare('INSERT INTO students (
