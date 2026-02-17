@@ -247,6 +247,8 @@ const PaymentGateway = () => {
     const txnId = `TXN${Date.now()}`
     const paymentId = `PAY${Date.now()}`
 
+    let apiSubmissionSucceeded = false
+
     if (cpanelApi.isConfigured()) {
       try {
         const formData = new FormData()
@@ -268,7 +270,8 @@ const PaymentGateway = () => {
         }
 
         await cpanelApi.submitPayment(formData)
-        console.log('Payment successfully submitted to database')
+        console.log('✅ Payment successfully submitted to database')
+        apiSubmissionSucceeded = true
       } catch (apiError) {
         console.error('Payment submission to database failed:', apiError)
         const errorMessage = apiError.message || apiError.toString()
@@ -308,34 +311,42 @@ const PaymentGateway = () => {
         }
       }
 
-      const submittedPayment = {
-        id: paymentId,
-        utrNo: normalizedUtr,
-        studentCode: studentProfile.studentId || 'N/A',
-        studentName: studentProfile.name || 'N/A',
-        email: studentProfile.email || '',
-        department: studentProfile.department || 'N/A',
-        year: studentProfile.year || 'N/A',
-        amount: payableAmount,
-        date: new Date().toISOString(),
-        status: 'pending',
-        transactionId: txnId,
-        screenshotName: paymentScreenshotName,
-        hasScreenshot: Boolean(paymentScreenshot),
-        foodPreference: effectiveFoodPreference,
-        foodIncluded: isFoodIncluded
-      }
+      // Only save to localStorage if API submission failed or wasn't attempted
+      if (!apiSubmissionSucceeded) {
+        const submittedPayment = {
+          id: paymentId,
+          utrNo: normalizedUtr,
+          studentCode: studentProfile.studentId || 'N/A',
+          studentName: studentProfile.name || 'N/A',
+          email: studentProfile.email || '',
+          department: studentProfile.department || 'N/A',
+          year: studentProfile.year || 'N/A',
+          amount: payableAmount,
+          date: new Date().toISOString(),
+          status: 'pending',
+          transactionId: txnId,
+          screenshotName: paymentScreenshotName,
+          hasScreenshot: Boolean(paymentScreenshot),
+          foodPreference: effectiveFoodPreference,
+          foodIncluded: isFoodIncluded
+        }
 
-      let existingSubmissions = []
-      try {
-        const savedSubmissions = localStorage.getItem('paymentSubmissions')
-        existingSubmissions = savedSubmissions ? JSON.parse(savedSubmissions) : []
-      } catch {
-        existingSubmissions = []
-      }
+        let existingSubmissions = []
+        try {
+          const savedSubmissions = localStorage.getItem('paymentSubmissions')
+          existingSubmissions = savedSubmissions ? JSON.parse(savedSubmissions) : []
+        } catch {
+          existingSubmissions = []
+        }
 
-      const updatedSubmissions = [submittedPayment, ...existingSubmissions].slice(0, 200)
-      localStorage.setItem('paymentSubmissions', JSON.stringify(updatedSubmissions))
+        const updatedSubmissions = [submittedPayment, ...existingSubmissions].slice(0, 200)
+        localStorage.setItem('paymentSubmissions', JSON.stringify(updatedSubmissions))
+        window.dispatchEvent(new Event('paymentSubmissionsUpdated'))
+      } else {
+        console.log('✅ Skipping localStorage save - payment already in database')
+        // Trigger refresh in admin dashboard to fetch from database
+        window.dispatchEvent(new Event('paymentSubmissionsUpdated'))
+      }
 
       if (isSupabaseConfigured && supabase) {
         try {
@@ -364,7 +375,6 @@ const PaymentGateway = () => {
           console.warn('Payment screenshot skipped due to localStorage size limit')
         }
       }
-      window.dispatchEvent(new Event('paymentSubmissionsUpdated'))
       
       // Redirect to dashboard after 3 seconds
       setTimeout(() => {
