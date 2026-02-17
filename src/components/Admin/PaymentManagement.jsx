@@ -202,16 +202,16 @@ const loadPaymentsWithApi = async () => {
       const payments = Array.isArray(response?.payments) ? response.payments : []
       const normalized = normalizePayments(payments)
 
-      if (normalized.length > 0) {
-        localStorage.setItem('paymentSubmissions', JSON.stringify(payments))
-        return normalized
-      }
-    } catch {
-      return loadPaymentsFromLocalStorage()
+      console.log(`✅ Loaded ${normalized.length} payments from database`)
+      return normalized
+    } catch (error) {
+      console.error('Failed to load payments from database:', error)
+      return []
     }
   }
 
-  return loadPaymentsFromLocalStorage()
+  console.warn('⚠️ cPanel API not configured - cannot load payments')
+  return []
 }
 
 const PaymentManagement = () => {
@@ -230,17 +230,10 @@ const PaymentManagement = () => {
 
     refreshPayments()
 
-    const handleStorageUpdate = (event) => {
-      if (event.key === 'paymentSubmissions') {
-        refreshPayments()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageUpdate)
+    // Listen for payment updates (triggered after successful submission)
     window.addEventListener('paymentSubmissionsUpdated', refreshPayments)
 
     return () => {
-      window.removeEventListener('storage', handleStorageUpdate)
       window.removeEventListener('paymentSubmissionsUpdated', refreshPayments)
     }
   }, [])
