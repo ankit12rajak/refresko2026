@@ -5,6 +5,7 @@ import QRCode from 'qrcode'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import { cpanelApi } from '../lib/cpanelApi'
 import { getActivePaymentOption, loadPaymentConfig } from '../lib/paymentConfig'
+import { loadPaymentConfigWithApi } from '../lib/paymentConfigApi'
 import './SKFDashboard.css'
 
 // Default data structure
@@ -181,7 +182,18 @@ const SKFDashboard = () => {
 
   useEffect(() => {
     document.body.classList.add('system-cursor')
-    setPaymentConfig(loadPaymentConfig())
+    
+    // Load payment config from database first (cross-device sync)
+    const loadConfig = async () => {
+      try {
+        const config = await loadPaymentConfigWithApi()
+        setPaymentConfig(config)
+      } catch (error) {
+        console.warn('Failed to load payment config from API, using localStorage:', error)
+        setPaymentConfig(loadPaymentConfig())
+      }
+    }
+    loadConfig()
     
     // Check authentication
     const isAuthenticated = localStorage.getItem('isAuthenticated')
@@ -238,8 +250,13 @@ const SKFDashboard = () => {
       }
     }
 
-    const handlePaymentConfigUpdate = () => {
-      setPaymentConfig(loadPaymentConfig())
+    const handlePaymentConfigUpdate = async () => {
+      try {
+        const config = await loadPaymentConfigWithApi()
+        setPaymentConfig(config)
+      } catch {
+        setPaymentConfig(loadPaymentConfig())
+      }
     }
 
     // Periodic polling to check database for payment status updates (cross-device sync)

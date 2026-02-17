@@ -76,6 +76,18 @@ export const loadPaymentConfig = () => {
   }
 }
 
+// Load payment config with database sync for cross-device support
+export const loadPaymentConfigWithSync = async () => {
+  // Try to import dynamically to avoid circular dependency
+  try {
+    const { loadPaymentConfigWithApi } = await import('./paymentConfigApi')
+    return await loadPaymentConfigWithApi()
+  } catch (error) {
+    console.warn('Failed to load config from API, using localStorage:', error)
+    return loadPaymentConfig()
+  }
+}
+
 export const savePaymentConfig = (config) => {
   const sanitized = sanitizeConfig(config)
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized))

@@ -4,7 +4,8 @@ import { motion } from 'framer-motion'
 import QRCode from 'qrcode'
 import imageCompression from 'browser-image-compression'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
-import { getActivePaymentOption, getUpiPayload, loadPaymentConfig } from '../lib/paymentConfig'
+import { getActivePaymentOption, loadPaymentConfig } from '../lib/paymentConfig'
+import { loadPaymentConfigWithApi } from '../lib/paymentConfigApi'
 import { cpanelApi } from '../lib/cpanelApi'
 import './PaymentGateway.css'
 
@@ -30,28 +31,40 @@ const PaymentGateway = () => {
 
   useEffect(() => {
     document.body.classList.add('system-cursor')
-    const configFromStorage = loadPaymentConfig()
-    setPaymentConfig(configFromStorage)
-    const currentOption = getActivePaymentOption(configFromStorage)
-    const requiresFoodPreference = Boolean(currentOption?.includeFood)
-
-    // Check authentication
-    const isAuthenticated = localStorage.getItem('isAuthenticated')
-    const profileCompleted = localStorage.getItem('profileCompleted')
     
-    if (!isAuthenticated || profileCompleted !== 'true') {
-      navigate('/login')
-      return
-    }
+    // Load payment config from database (cross-device sync)
+    const loadConfig = async () => {
+      try {
+        const config = await loadPaymentConfigWithApi()
+        setPaymentConfig(config)
+        const currentOption = getActivePaymentOption(config)
+        const requiresFoodPreference = Boolean(currentOption?.includeFood)
 
-    // Get food preference
-    const savedFoodPreference = localStorage.getItem('foodPreference')
-    const normalizedSavedFood = savedFoodPreference && savedFoodPreference !== 'null' ? savedFoodPreference : ''
-    if (requiresFoodPreference && !normalizedSavedFood) {
-      navigate('/dashboard')
-      return
+        // Check authentication
+        const isAuthenticated = localStorage.getItem('isAuthenticated')
+        const profileCompleted = localStorage.getItem('profileCompleted')
+        
+        if (!isAuthenticated || profileCompleted !== 'true') {
+          navigate('/login')
+          return
+        }
+
+        // Get food preference
+        const savedFoodPreference = localStorage.getItem('foodPreference')
+        const normalizedSavedFood = savedFoodPreference && savedFoodPreference !== 'null' ? savedFoodPreference : ''
+        if (requiresFoodPreference && !normalizedSavedFood) {
+          navigate('/dashboard')
+          return
+        }
+        setFoodPreference(requiresFoodPreference ? normalizedSavedFood : 'NOT_INCLUDED')
+      } catch (error) {
+        console.warn('Failed to load config from API:', error)
+        const configFromStorage = loadPaymentConfig()
+        setPaymentConfig(configFromStorage)
+      }
     }
-    setFoodPreference(requiresFoodPreference ? normalizedSavedFood : 'NOT_INCLUDED')
+    
+    loadConfig()
 
     // Get student profile
     const savedProfile = localStorage.getItem('studentProfile')
@@ -59,8 +72,13 @@ const PaymentGateway = () => {
       setStudentProfile(JSON.parse(savedProfile))
     }
 
-    const refreshPaymentConfig = () => {
-      setPaymentConfig(loadPaymentConfig())
+    const refreshPaymentConfig = async () => {
+      try {
+        const config = await loadPaymentConfigWithApi()
+        setPaymentConfig(config)
+      } catch {
+        setPaymentConfig(loadPaymentConfig())
+      }
     }
 
     const handleStorageUpdate = (event) => {

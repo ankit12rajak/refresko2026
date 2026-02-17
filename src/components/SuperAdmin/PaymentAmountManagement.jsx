@@ -6,7 +6,7 @@ import {
   getUpiPayload,
   loadPaymentConfig
 } from '../../lib/paymentConfig'
-import { savePaymentConfigWithApi } from '../../lib/paymentConfigApi'
+import { loadPaymentConfigWithApi, savePaymentConfigWithApi } from '../../lib/paymentConfigApi'
 import './PaymentAmountManagement.css'
 
 const PaymentAmountManagement = () => {
@@ -15,6 +15,24 @@ const PaymentAmountManagement = () => {
   const [activeOptionId, setActiveOptionId] = useState(() => loadPaymentConfig().activeOptionId)
   const [previewQrCodeUrl, setPreviewQrCodeUrl] = useState('')
   const [saveMessage, setSaveMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load config from database on mount (cross-device sync)
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const dbConfig = await loadPaymentConfigWithApi()
+        setConfig(dbConfig)
+        setDraftOptions(dbConfig.options)
+        setActiveOptionId(dbConfig.activeOptionId)
+      } catch (error) {
+        console.warn('Failed to load config from API:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadConfig()
+  }, [])
 
   useEffect(() => {
     setDraftOptions(config.options)
@@ -22,8 +40,13 @@ const PaymentAmountManagement = () => {
   }, [config])
 
   useEffect(() => {
-    const refreshConfig = () => {
-      setConfig(loadPaymentConfig())
+    const refreshConfig = async () => {
+      try {
+        const dbConfig = await loadPaymentConfigWithApi()
+        setConfig(dbConfig)
+      } catch {
+        setConfig(loadPaymentConfig())
+      }
     }
 
     const handleStorageUpdate = (event) => {
