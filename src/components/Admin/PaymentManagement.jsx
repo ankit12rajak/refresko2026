@@ -325,6 +325,39 @@ const PaymentManagement = () => {
         const refreshed = await loadPaymentsWithApi()
         setPayments(refreshed)
 
+        // Update localStorage to reflect status change for student dashboard
+        try {
+          const savedPayments = localStorage.getItem('paymentSubmissions')
+          const parsedPayments = savedPayments ? JSON.parse(savedPayments) : []
+          const nextStatus = status === 'approved' ? 'completed' : 'declined'
+
+          const updatedPayments = Array.isArray(parsedPayments)
+            ? parsedPayments.map((payment) => {
+                const currentPaymentId = payment.payment_id || payment.id || ''
+                const currentStudentCode = (payment.studentCode || payment.student_code || '').trim().toUpperCase()
+                
+                // Match by payment_id or student_code
+                if (currentPaymentId === paymentId || currentStudentCode === studentCode) {
+                  return {
+                    ...payment,
+                    status: nextStatus,
+                    payment_approved: status,
+                    paymentApproved: status,
+                    reviewedAt: new Date().toISOString()
+                  }
+                }
+                return payment
+              })
+            : []
+
+          if (updatedPayments.length > 0) {
+            localStorage.setItem('paymentSubmissions', JSON.stringify(updatedPayments))
+            window.dispatchEvent(new Event('paymentSubmissionsUpdated'))
+          }
+        } catch (localStorageError) {
+          console.warn('Failed to update localStorage:', localStorageError)
+        }
+
         // Update modal state
         setSelectedPayment((previous) => (
           previous && previous.id === paymentId

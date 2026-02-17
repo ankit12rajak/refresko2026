@@ -148,8 +148,16 @@ const SKFDashboard = () => {
     }
   }, [navigate])
 
-  const isPaymentApproved = latestPayment?.status === 'completed' || latestPayment?.status === 'approved'
-  const isPaymentDeclined = latestPayment?.status === 'declined'
+  const isPaymentApproved = 
+    latestPayment?.status === 'completed' || 
+    latestPayment?.status === 'approved' ||
+    latestPayment?.payment_approved === 'approved' ||
+    latestPayment?.paymentApproved === 'approved'
+  
+  const isPaymentDeclined = 
+    latestPayment?.status === 'declined' ||
+    latestPayment?.payment_approved === 'declined' ||
+    latestPayment?.paymentApproved === 'declined'
   const payment = latestPayment
     ? {
         transactionId: latestPayment.transactionId || latestPayment.utrNo || 'N/A',
