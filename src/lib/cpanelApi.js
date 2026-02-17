@@ -26,11 +26,18 @@ const request = async (path, { method = 'GET', headers = {}, body, query } = {})
     throw error
   }
 
-  const response = await fetch(buildUrl(path, query), {
+  // For FormData, don't set Content-Type header - let browser set it with boundary
+  const fetchOptions = {
     method,
-    headers,
     body
-  })
+  }
+
+  // Only include headers if not FormData
+  if (!(body instanceof FormData)) {
+    fetchOptions.headers = headers
+  }
+
+  const response = await fetch(buildUrl(path, query), fetchOptions)
 
   const payload = await parseJsonSafe(response)
 

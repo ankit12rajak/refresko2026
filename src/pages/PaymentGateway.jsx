@@ -174,15 +174,28 @@ const PaymentGateway = () => {
       
       console.log('Compressed file size:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB')
 
+      // Convert compressed blob to File object with proper name and type
+      const fileName = file.name.replace(/\.[^/.]+$/, '') + '.jpg' // Change extension to .jpg
+      const compressedFileAsFile = new File([compressedFile], fileName, {
+        type: 'image/jpeg',
+        lastModified: new Date().getTime()
+      })
+
       // Read compressed file as base64
       const reader = new FileReader()
       reader.onload = () => {
         setPaymentScreenshotBase64(reader.result)
-        setPaymentScreenshotName(file.name)
+        setPaymentScreenshotName(fileName)
         setFormError('')
       }
-      reader.readAsDataURL(compressedFile)
-      setPaymentScreenshot(compressedFile)
+      reader.readAsDataURL(compressedFileAsFile)
+      setPaymentScreenshot(compressedFileAsFile)
+      
+      console.log('✅ Screenshot compressed and ready:', {
+        name: fileName,
+        size: compressedFileAsFile.size,
+        type: compressedFileAsFile.type
+      })
     } catch (error) {
       console.error('Image compression error:', error)
       setFormError('Failed to compress image. Please try a different image.')
@@ -202,6 +215,12 @@ const PaymentGateway = () => {
 
     if (!paymentScreenshot) {
       setFormError('Please upload payment screenshot before submitting')
+      return
+    }
+
+    if (!(paymentScreenshot instanceof File)) {
+      setFormError('Invalid screenshot file. Please re-upload the payment screenshot.')
+      console.error('Screenshot is not a File object:', paymentScreenshot)
       return
     }
 
