@@ -58,14 +58,24 @@ function admin_create(): void
 
         $pdo = db();
         
-        // Check if table exists first
+        // Check if table exists, if not create it automatically
         $checkTable = $pdo->query("SHOW TABLES LIKE 'admin_users'")->fetch();
         if (!$checkTable) {
-            json_response([
-                'success' => false, 
-                'message' => 'admin_users table does not exist. Please run the SQL setup script.',
-                'hint' => 'Run cpanel_backend_api/sql/04_create_admin_table.sql on your database'
-            ], 500);
+            // Create the admin_users table
+            $createTableSql = "
+                CREATE TABLE IF NOT EXISTS admin_users (
+                  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  display_name VARCHAR(120) NULL,
+                  email VARCHAR(160) NOT NULL UNIQUE,
+                  password_hash VARCHAR(255) NOT NULL,
+                  role ENUM('admin','superadmin') NOT NULL DEFAULT 'admin',
+                  is_active TINYINT(1) NOT NULL DEFAULT 1,
+                  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ";
+            $pdo->exec($createTableSql);
+            error_log('admin_users table created automatically');
         }
         
         $stmt = $pdo->prepare('INSERT INTO admin_users (display_name, email, password_hash, role, is_active)
@@ -95,14 +105,28 @@ function admin_list(): void
     try {
         $pdo = db();
         
-        // Check if table exists first
+        // Check if table exists, if not create it automatically
         $checkTable = $pdo->query("SHOW TABLES LIKE 'admin_users'")->fetch();
         if (!$checkTable) {
-            json_response([
-                'success' => false, 
-                'message' => 'admin_users table does not exist. Please run the SQL setup script.',
-                'hint' => 'Run cpanel_backend_api/sql/04_create_admin_table.sql on your database'
-            ], 500);
+            // Create the admin_users table
+            $createTableSql = "
+                CREATE TABLE IF NOT EXISTS admin_users (
+                  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  display_name VARCHAR(120) NULL,
+                  email VARCHAR(160) NOT NULL UNIQUE,
+                  password_hash VARCHAR(255) NOT NULL,
+                  role ENUM('admin','superadmin') NOT NULL DEFAULT 'admin',
+                  is_active TINYINT(1) NOT NULL DEFAULT 1,
+                  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ";
+            $pdo->exec($createTableSql);
+            error_log('admin_users table created automatically');
+            
+            // Return empty list since table was just created
+            json_response(['success' => true, 'admins' => []]);
+            return;
         }
         
         $stmt = $pdo->query('SELECT id, display_name, email, role, is_active, created_at

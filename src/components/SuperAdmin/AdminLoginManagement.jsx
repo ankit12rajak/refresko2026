@@ -87,7 +87,7 @@ const AdminLoginManagement = () => {
     if (cpanelApi.isConfigured()) {
       try {
         const response = await cpanelApi.createAdmin({ name, email, password, role: 'admin' })
-        console.log('Admin created via API:', response)
+        console.log('✅ Admin created via API:', response)
         
         // Refresh admin list from database
         const refreshed = await loadAdminAccountsWithApi()
@@ -98,29 +98,12 @@ const AdminLoginManagement = () => {
         return
       } catch (apiError) {
         console.error('API create admin failed:', apiError)
-        setError(`⚠ Database sync failed: ${apiError.message}. Admin will only exist locally.`)
-        // Don't return - fall through to localStorage as fallback
+        setError(`⚠ Database sync failed: ${apiError.message}. Please try again.`)
+        return
       }
     } else {
-      setError('⚠ API not configured. Admin will only exist locally (not synced across devices).')
-    }
-
-    // Fallback to localStorage only if API fails or not configured
-    const newAccount = {
-      id: `ADM${Date.now()}`,
-      name,
-      email,
-      password,
-      status: 'active',
-      createdAt: new Date().toISOString()
-    }
-
-    const updatedAccounts = [newAccount, ...adminAccounts]
-    setAdminAccounts(updatedAccounts)
-    saveAdminAccountsToLocalStorage(updatedAccounts)
-    setFormData({ name: '', email: '', password: '' })
-    if (!error) {
-      setSuccess('Admin created locally (not synced - API unavailable)')
+      setError('⚠ API not configured. Cannot create admin - please check your .env file.')
+      return
     }
   }
 
