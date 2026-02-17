@@ -50,9 +50,14 @@ const PaymentAmountManagement = () => {
     // Use uploaded QR code if available, otherwise use static QR
     const currentActiveOption = draftOptions.find(opt => opt.id === activeOptionId)
     if (currentActiveOption?.qrCodeUrl) {
-      setPreviewQrCodeUrl(currentActiveOption.qrCodeUrl)
+      // Add cache-busting timestamp to force fresh preview
+      const qrUrl = currentActiveOption.qrCodeUrl
+      const cacheBustedUrl = qrUrl.includes('data:image')
+        ? qrUrl // Don't add timestamp to base64 data URLs
+        : `${qrUrl}?v=${Date.now()}`
+      setPreviewQrCodeUrl(cacheBustedUrl)
     } else {
-      setPreviewQrCodeUrl('/image.png')
+      setPreviewQrCodeUrl(`/image.png?v=${Date.now()}`)
     }
   }, [activeOption, draftOptions, activeOptionId])
 

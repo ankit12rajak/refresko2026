@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import QRCode from 'qrcode'
+import imageCompression from 'browser-image-compression'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import { getActivePaymentOption, getUpiPayload, loadPaymentConfig } from '../lib/paymentConfig'
 import { cpanelApi } from '../lib/cpanelApi'
@@ -91,8 +92,13 @@ const PaymentGateway = () => {
         // Use uploaded QR code from config if available, otherwise fallback to static
         const qrCodePath = activePaymentOption.qrCodeUrl || '/image.png'
         
+        // Add cache-busting timestamp to force fresh load
+        const cacheBustedUrl = qrCodePath.includes('data:image') 
+          ? qrCodePath // Don't add timestamp to base64 data URLs
+          : `${qrCodePath}?v=${Date.now()}`
+        
         if (isMounted) {
-          setPaymentQrCodeUrl(qrCodePath)
+          setPaymentQrCodeUrl(cacheBustedUrl)
         }
       } catch {
         if (isMounted) {
@@ -103,12 +109,20 @@ const PaymentGateway = () => {
 
     generatePaymentQrCode()
 
+    // Auto-refresh QR code every 1 minute to clear cache
+    const refreshInterval = setInterval(() => {
+      if (isMounted) {
+        generatePaymentQrCode()
+      }
+    }, 60000) // 60000ms = 1 minute
+
     return () => {
       isMounted = false
+      clearInterval(refreshInterval)
     }
   }, [activePaymentOption])
 
-  const handleScreenshotUpload = (event) => {
+  const handleScreenshotUpload = async (event) => {
     const file = event.target.files?.[0]
 
     if (!file) {
@@ -126,14 +140,38 @@ const PaymentGateway = () => {
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = () => {
-      setPaymentScreenshotBase64(reader.result)
-      setPaymentScreenshotName(file.name)
-      setFormError('')
+    try {
+      // Compression options
+      const options = {
+        maxSizeMB: 0.5, // Max file size 500KB
+        maxWidthOrHeight: 1920, // Max dimension
+        useWebWorker: true, // Use web worker for better performance
+        fileType: 'image/jpeg' // Convert to JPEG for better compression
+      }
+
+      console.log('Original file size:', (file.size / 1024 / 1024).toFixed(2), 'MB')
+      
+      // Compress the image
+      const compressedFile = await imageCompression(file, options)
+      
+      console.log('Compressed file size:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB')
+
+      // Read compressed file as base64
+      const reader = new FileReader()
+      reader.onload = () => {
+        setPaymentScreenshotBase64(reader.result)
+        setPaymentScreenshotName(file.name)
+        setFormError('')
+      }
+      reader.readAsDataURL(compressedFile)
+      setPaymentScreenshot(compressedFile)
+    } catch (error) {
+      console.error('Image compression error:', error)
+      setFormError('Failed to compress image. Please try a different image.')
+      setPaymentScreenshot(null)
+      setPaymentScreenshotBase64(null)
+      setPaymentScreenshotName('')
     }
-    reader.readAsDataURL(file)
-    setPaymentScreenshot(file)
   }
 
   const handleConfirmPayment = async () => {
