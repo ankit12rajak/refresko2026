@@ -348,20 +348,7 @@ const SuperAdmin = () => {
             <span>ADMIN LOGIN CONTROL</span>
           </motion.button>
 
-          <motion.button
-            className="nav-tab interactive"
-            onClick={() => navigate('/super-admin/logs')}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 4h16v16H4z"/>
-              <path d="M8 8h8"/>
-              <path d="M8 12h8"/>
-              <path d="M8 16h5"/>
-            </svg>
-            <span>LOG SYSTEM</span>
-          </motion.button>
+
         </div>
       </nav>
 

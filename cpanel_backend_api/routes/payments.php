@@ -1,7 +1,5 @@
 <?php
 
-require_once __DIR__ . '/../lib/logger.php';
-
 function payments_list(): void
 {
     $status = trim((string)($_GET['status'] ?? ''));
@@ -46,8 +44,6 @@ function payments_list(): void
             $payment['screenshot'] = null;
         }
     }
-
-    log_event('payments_list', 'payment', null, ['status' => $status, 'search' => $search, 'limit' => $limit]);
 
     json_response(['success' => true, 'payments' => $payments]);
 }

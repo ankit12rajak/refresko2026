@@ -1,7 +1,5 @@
 <?php
 
-require_once __DIR__ . '/../lib/logger.php';
-
 function admin_login(): void
 {
     $payload = get_json_input();
@@ -16,16 +14,12 @@ function admin_login(): void
     $admin = $stmt->fetch();
 
     if (!$admin || (int)$admin['is_active'] !== 1) {
-        log_event('admin_login_failed', 'admin_user', $email, ['reason' => 'invalid_credentials'], $email);
         json_response(['success' => false, 'message' => 'Invalid credentials'], 401);
     }
 
     if (!password_verify($password, (string)$admin['password_hash'])) {
-        log_event('admin_login_failed', 'admin_user', $email, ['reason' => 'invalid_password'], $email);
         json_response(['success' => false, 'message' => 'Invalid credentials'], 401);
     }
-
-    log_event('admin_login', 'admin_user', (string)$admin['id'], ['email' => $admin['email'], 'role' => $admin['role']], $admin['email']);
 
     json_response([
         'success' => true,

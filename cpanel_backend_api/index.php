@@ -11,7 +11,6 @@ require_once __DIR__ . '/routes/config.php';
 require_once __DIR__ . '/routes/students.php';
 require_once __DIR__ . '/routes/payments.php';
 require_once __DIR__ . '/routes/admin.php';
-require_once __DIR__ . '/routes/logs.php';
 
 apply_cors();
 
@@ -82,10 +81,6 @@ try {
 
     if ($method === 'POST' && $path === '/admin/delete') {
         admin_delete();
-    }
-
-    if ($method === 'GET' && $path === '/logs/list') {
-        logs_list();
     }
 
     json_response(['success' => false, 'message' => 'Route not found', 'route' => $path], 404);

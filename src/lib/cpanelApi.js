@@ -182,14 +182,5 @@ export const cpanelApi = {
       },
       body: JSON.stringify({ admin_id: adminId })
     })
-  },
-
-  listLogs: async ({ page = 1, limit = 50, action, entity, search } = {}) => {
-    return request('/logs/list', {
-      query: { page, limit, action, entity, search },
-      headers: {
-        'X-SUPERADMIN-TOKEN': SUPERADMIN_TOKEN
-      }
-    })
   }
 }
