@@ -138,15 +138,56 @@ const StudentManagement = () => {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setStudents(students.map(student =>
-      student.id === selectedStudent.id
-        ? { ...student, ...formData }
-        : student
-    ))
-    setShowEditModal(false)
-    setSelectedStudent(null)
+    
+    if (!isSupabaseConfigured || !supabase) {
+      alert('Database connection not configured')
+      return
+    }
+
+    try {
+      // Map form data to Supabase column names
+      const updateData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        department: formData.department,
+        year: formData.year
+      }
+
+      // Update in Supabase using student_code as the identifier
+      const { error } = await supabase
+        .from('students')
+        .update(updateData)
+        .eq('student_code', selectedStudent.id)
+
+      if (error) {
+        alert(`Update failed: ${error.message}`)
+        return
+      }
+
+      // Update local state to reflect changes
+      setStudents(students.map(student =>
+        student.id === selectedStudent.id
+          ? { 
+              ...student, 
+              name: formData.name,
+              email: formData.email,
+              phone: formData.phone,
+              department: formData.department,
+              year: formData.year
+            }
+          : student
+      ))
+
+      alert('Student details updated successfully!')
+      setShowEditModal(false)
+      setSelectedStudent(null)
+    } catch (err) {
+      console.error('Error updating student:', err)
+      alert('Error updating student details. Please try again.')
+    }
   }
 
   const handleToggleStatus = (studentId) => {
