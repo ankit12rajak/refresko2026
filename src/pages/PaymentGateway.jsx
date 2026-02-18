@@ -509,7 +509,7 @@ const PaymentGateway = () => {
                 </div>
                 
                 <div className="payment-info">
-                  <p className="upi-id">UPI ID: <span>{activePaymentOption?.upiId || 'refresko@upi'}</span></p>
+                  {/* <p className="upi-id">UPI ID: <span>{activePaymentOption?.upiId || 'refresko@upi'}</span></p> */}
                   <p className="amount-display">Amount: <span>₹{activePaymentOption?.amount || 600}</span></p>
                 </div>
               </div>
