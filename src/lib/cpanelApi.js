@@ -1,4 +1,5 @@
 const API_BASE_URL = (import.meta.env.VITE_CPANEL_API_BASE_URL || '').replace(/\/$/, '')
+const SUPERADMIN_TOKEN = import.meta.env.VITE_CPANEL_SUPERADMIN_TOKEN || ''
 
 const parseJsonSafe = async (response) => {
   try {
@@ -180,6 +181,15 @@ export const cpanelApi = {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ admin_id: adminId })
+    })
+  },
+
+  listLogs: async ({ page = 1, limit = 50, action, entity, search } = {}) => {
+    return request('/logs/list', {
+      query: { page, limit, action, entity, search },
+      headers: {
+        'X-SUPERADMIN-TOKEN': SUPERADMIN_TOKEN
+      }
     })
   }
 }

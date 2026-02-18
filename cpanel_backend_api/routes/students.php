@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../lib/logger.php';
+
 function students_get_one(): void
 {
     $studentCode = strtoupper(trim((string)($_GET['student_code'] ?? '')));
@@ -13,8 +15,11 @@ function students_get_one(): void
     $student = $stmt->fetch();
 
     if (!$student) {
+        log_event('student_view_failed', 'student', $studentCode, ['reason' => 'not_found']);
         json_response(['success' => false, 'message' => 'Student not found'], 404);
     }
+
+    log_event('student_view', 'student', $studentCode, [], $student['email'] ?? null);
 
     json_response(['success' => true, 'student' => $student]);
 }
@@ -70,6 +75,12 @@ function students_upsert_profile(): void
         ':food_included' => bool_to_int((bool)($payload['food_included'] ?? false)),
         ':food_preference' => normalize_food_preference($payload['food_preference'] ?? null),
     ]);
+
+    log_event('student_upsert', 'student', $studentCode, [
+        'department' => trim((string)($payload['department'] ?? '')),
+        'year' => trim((string)($payload['year'] ?? '')),
+        'payment_approved' => (string)($payload['payment_approved'] ?? 'pending'),
+    ], strtolower(trim((string)($payload['email'] ?? ''))));
 
     json_response(['success' => true, 'message' => 'Student profile saved']);
 }

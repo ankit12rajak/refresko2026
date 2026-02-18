@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../lib/logger.php';
+
 function payments_list(): void
 {
     $status = trim((string)($_GET['status'] ?? ''));
@@ -44,6 +46,8 @@ function payments_list(): void
             $payment['screenshot'] = null;
         }
     }
+
+    log_event('payments_list', 'payment', null, ['status' => $status, 'search' => $search, 'limit' => $limit]);
 
     json_response(['success' => true, 'payments' => $payments]);
 }
@@ -216,6 +220,12 @@ function payments_submit_with_upload(): void
 
         $pdo->commit();
 
+        log_event('payment_submit', 'payment', $paymentId, [
+            'student_code' => $studentCode,
+            'amount' => $amount,
+            'status' => 'pending'
+        ], $email !== '' ? $email : null);
+
         json_response([
             'success' => true,
             'message' => 'Payment submitted successfully',
@@ -293,6 +303,12 @@ function payments_update_status(): void
         $rowsAffected = $updateStudent->rowCount();
 
         $pdo->commit();
+
+        log_event('payment_decision', 'payment', $paymentId, [
+            'decision' => $decision,
+            'status' => $nextStatus,
+            'student_code' => $payment['student_code']
+        ]);
         json_response([
             'success' => true,
             'message' => 'Payment status updated',

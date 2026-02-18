@@ -10,6 +10,8 @@ return [
         'charset' => 'utf8mb4',
     ],
 
+    'superadmin_token' => 'CHANGE_ME_SUPERADMIN_TOKEN',
+
 
     'cors_allowed_origins' => [
         'https://refresko.skf.edu.in',

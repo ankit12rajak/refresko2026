@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../lib/logger.php';
+
 function admin_login(): void
 {
     $payload = get_json_input();
@@ -14,12 +16,16 @@ function admin_login(): void
     $admin = $stmt->fetch();
 
     if (!$admin || (int)$admin['is_active'] !== 1) {
+        log_event('admin_login_failed', 'admin_user', $email, ['reason' => 'invalid_credentials'], $email);
         json_response(['success' => false, 'message' => 'Invalid credentials'], 401);
     }
 
     if (!password_verify($password, (string)$admin['password_hash'])) {
+        log_event('admin_login_failed', 'admin_user', $email, ['reason' => 'invalid_password'], $email);
         json_response(['success' => false, 'message' => 'Invalid credentials'], 401);
     }
+
+    log_event('admin_login', 'admin_user', (string)$admin['id'], ['email' => $admin['email'], 'role' => $admin['role']], $admin['email']);
 
     json_response([
         'success' => true,
@@ -128,6 +134,9 @@ function admin_create(): void
             ':role' => $role,
         ]);
 
+        $actor = isset($payload['actor']) ? (string)$payload['actor'] : null;
+        log_event('admin_create', 'admin_user', (string)$pdo->lastInsertId(), ['email' => $email, 'role' => $role], $actor);
+
         json_response(['success' => true, 'message' => 'Admin created'], 201);
     } catch (PDOException $error) {
         // Check for duplicate email error
@@ -226,6 +235,8 @@ function admin_list(): void
             ];
         }, $rows);
 
+        log_event('admin_list', 'admin_user', null, ['count' => count($admins)]);
+
         json_response(['success' => true, 'admins' => $admins]);
     } catch (Throwable $error) {
         json_response([
@@ -294,6 +305,16 @@ function admin_update(): void
         json_response(['success' => false, 'message' => 'Admin not found or unchanged'], 404);
     }
 
+    $meta = [];
+    if ($hasStatus) {
+        $meta['status'] = $status;
+    }
+    if ($hasName) {
+        $meta['name'] = $name;
+    }
+    $actor = isset($payload['actor']) ? (string)$payload['actor'] : null;
+    log_event('admin_update', 'admin_user', (string)$dbId, $meta, $actor);
+
     json_response(['success' => true, 'message' => 'Admin updated']);
 }
 
@@ -315,6 +336,9 @@ function admin_delete(): void
     if ($stmt->rowCount() === 0) {
         json_response(['success' => false, 'message' => 'Admin not found'], 404);
     }
+
+    $actor = isset($payload['actor']) ? (string)$payload['actor'] : null;
+    log_event('admin_delete', 'admin_user', (string)$dbId, [], $actor);
 
     json_response(['success' => true, 'message' => 'Admin deleted']);
 }
