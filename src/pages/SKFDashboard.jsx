@@ -657,7 +657,7 @@ const SKFDashboard = () => {
                     <li>Present this QR code at the main entrance</li>
                     <li>Keep your Student ID ready for verification</li>
                     <li>This pass grants access to all SKF student areas</li>
-                    <li>Lost pass? Contact support at help@refresko.com</li>
+                    
                   </ul>
                 </div>
               </motion.div>
@@ -763,7 +763,7 @@ const SKFDashboard = () => {
 
                   <div className="receipt-note">
                     <p>This is a computer-generated receipt and does not require a signature.</p>
-                    <p>For any queries, contact: finance@refresko.com</p>
+                    <p>For any queries, contact: Ankit Rajak(CSE 3rd Year):7439498461</p>
                   </div>
                 </div>
                 ) : (
