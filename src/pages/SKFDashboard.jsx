@@ -629,7 +629,7 @@ const SKFDashboard = () => {
                     </div>
                     <div className="pass-detail-row">
                       <span className="pass-label">Valid For</span>
-                      <span className="pass-value">All Days - March 15-17, 2026</span>
+                      <span className="pass-value">All Days - March 27th & 28th, 2026</span>
                     </div>
                   </div>
 
