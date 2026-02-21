@@ -20,6 +20,7 @@ const PaymentGateway = () => {
   const [paymentScreenshotName, setPaymentScreenshotName] = useState('')
   const [paymentScreenshotBase64, setPaymentScreenshotBase64] = useState(null)
   const [formError, setFormError] = useState('')
+  const [isPaymentLocked, setIsPaymentLocked] = useState(false)
   const [paymentConfig, setPaymentConfig] = useState(() => loadPaymentConfig())
   const [paymentQrCodeUrl, setPaymentQrCodeUrl] = useState('')
 
@@ -28,6 +29,39 @@ const PaymentGateway = () => {
     [paymentConfig]
   )
   const isFoodIncluded = Boolean(activePaymentOption?.includeFood)
+
+  const checkPaymentCompletion = async (studentCode) => {
+    const normalizedCode = (studentCode || '').trim().toUpperCase()
+    if (!normalizedCode) return false
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select('payment_completion')
+          .eq('student_code', normalizedCode)
+          .single()
+
+        if (!error) {
+          return Boolean(data?.payment_completion)
+        }
+      } catch (error) {
+        console.warn('Unable to verify payment completion from Supabase:', error)
+      }
+    }
+
+    try {
+      const profileRaw = localStorage.getItem('studentProfile')
+      const profile = profileRaw ? JSON.parse(profileRaw) : null
+      if (profile && Boolean(profile.payment_completion)) {
+        return true
+      }
+    } catch {
+      // ignore malformed profile cache
+    }
+
+    return localStorage.getItem('paymentCompleted') === 'true'
+  }
 
   useEffect(() => {
     document.body.classList.add('system-cursor')
@@ -66,11 +100,25 @@ const PaymentGateway = () => {
     
     loadConfig()
 
-    // Get student profile
-    const savedProfile = localStorage.getItem('studentProfile')
-    if (savedProfile) {
-      setStudentProfile(JSON.parse(savedProfile))
+    const initializeStudentProfile = async () => {
+      const savedProfile = localStorage.getItem('studentProfile')
+      if (!savedProfile) return
+
+      try {
+        const parsedProfile = JSON.parse(savedProfile)
+        setStudentProfile(parsedProfile)
+
+        const completed = await checkPaymentCompletion(parsedProfile.studentId)
+        setIsPaymentLocked(completed)
+        if (completed) {
+          setFormError('Payment already completed. Duplicate submission is not allowed.')
+        }
+      } catch {
+        setStudentProfile(null)
+      }
     }
+
+    initializeStudentProfile()
 
     const refreshPaymentConfig = async () => {
       try {
@@ -212,6 +260,13 @@ const PaymentGateway = () => {
     const normalizedSavedFood = savedFoodPreference && savedFoodPreference !== 'null' ? savedFoodPreference : ''
     const effectiveFoodPreference = isFoodIncluded ? (foodPreference || normalizedSavedFood || '') : null
     const payableAmount = Number(activePaymentOption?.amount) || 600
+
+    const completedAlready = await checkPaymentCompletion(currentStudentId)
+    if (completedAlready) {
+      setIsPaymentLocked(true)
+      setFormError('Payment already completed. Duplicate submission is not allowed.')
+      return
+    }
 
     if (!paymentScreenshot) {
       setFormError('Please upload payment screenshot before submitting')
@@ -549,8 +604,12 @@ const PaymentGateway = () => {
 
                   {formError && <p className="payment-error">{formError}</p>}
 
-                  <button className="payment-confirm-btn" onClick={handleConfirmPayment}>
-                    <span>Submit Payment Proof</span>
+                  <button
+                    className="payment-confirm-btn"
+                    onClick={handleConfirmPayment}
+                    disabled={isPaymentLocked}
+                  >
+                    <span>{isPaymentLocked ? 'Payment Completed' : 'Submit Payment Proof'}</span>
                   </button>
                 </div>
               </div>

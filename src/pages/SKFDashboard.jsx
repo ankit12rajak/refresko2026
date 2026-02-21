@@ -43,6 +43,20 @@ const SKFDashboard = () => {
     if (!studentCode) return null
 
     try {
+      let studentRecord = null
+
+      if (isSupabaseConfigured && supabase) {
+        const { data: studentData, error: studentError } = await supabase
+          .from('students')
+          .select('payment_completion, gate_pass_created, payment_approved')
+          .eq('student_code', studentCode.trim().toUpperCase())
+          .single()
+
+        if (!studentError && studentData) {
+          studentRecord = studentData
+        }
+      }
+
       // Try cPanel API first
       if (cpanelApi.isConfigured()) {
         try {
@@ -55,7 +69,8 @@ const SKFDashboard = () => {
             if (studentPayment) {
               return {
                 status: studentPayment.status,
-                payment_approved: studentPayment.payment_approved,
+                payment_approved: studentRecord?.payment_approved || studentPayment.payment_approved,
+                payment_completion: Boolean(studentRecord?.payment_completion),
                 amount: studentPayment.amount,
                 utrNo: studentPayment.utr_no,
                 transactionId: studentPayment.utr_no,
@@ -70,13 +85,7 @@ const SKFDashboard = () => {
 
       // Try Supabase as fallback
       if (isSupabaseConfigured && supabase) {
-        const { data: studentData, error } = await supabase
-          .from('students')
-          .select('payment_completion, gate_pass_created, payment_approved')
-          .eq('student_code', studentCode.trim().toUpperCase())
-          .single()
-
-        if (!error && studentData) {
+        if (studentRecord) {
           // Get latest payment from payments table
           const { data: paymentsData } = await supabase
             .from('payments')
@@ -88,13 +97,21 @@ const SKFDashboard = () => {
 
           if (paymentsData) {
             return {
-              status: paymentsData.status || (studentData.payment_approved === 'approved' ? 'completed' : 'pending'),
-              payment_approved: studentData.payment_approved,
+              status: paymentsData.status || (studentRecord.payment_approved === 'approved' ? 'completed' : 'pending'),
+              payment_approved: studentRecord.payment_approved,
+              payment_completion: Boolean(studentRecord.payment_completion),
               amount: paymentsData.amount,
               utrNo: paymentsData.utr_no,
               transactionId: paymentsData.utr_no,
               date: paymentsData.created_at
             }
+          }
+
+          return {
+            status: studentRecord.payment_approved === 'approved' ? 'completed' : 'pending',
+            payment_approved: studentRecord.payment_approved || 'pending',
+            payment_completion: Boolean(studentRecord.payment_completion),
+            amount: configuredPaymentAmount
           }
         }
       }
@@ -145,7 +162,10 @@ const SKFDashboard = () => {
         // Database status takes priority for approval/status
         status: dbPaymentStatus?.status || latest?.status || 'pending',
         payment_approved: dbPaymentStatus?.payment_approved || latest?.payment_approved || latest?.paymentApproved || 'pending',
-        paymentApproved: dbPaymentStatus?.payment_approved || latest?.paymentApproved || latest?.payment_approved || 'pending'
+        paymentApproved: dbPaymentStatus?.payment_approved || latest?.paymentApproved || latest?.payment_approved || 'pending',
+        payment_completion: typeof dbPaymentStatus?.payment_completion === 'boolean'
+          ? dbPaymentStatus.payment_completion
+          : Boolean(latest?.payment_completion)
       }
 
       setLatestPayment(finalPaymentData)
@@ -159,7 +179,8 @@ const SKFDashboard = () => {
               ...payment,
               status: dbPaymentStatus.status,
               payment_approved: dbPaymentStatus.payment_approved,
-              paymentApproved: dbPaymentStatus.payment_approved
+              paymentApproved: dbPaymentStatus.payment_approved,
+              payment_completion: Boolean(dbPaymentStatus.payment_completion)
             }
           }
           return payment
@@ -287,6 +308,11 @@ const SKFDashboard = () => {
     latestPayment?.status === 'declined' ||
     latestPayment?.payment_approved === 'declined' ||
     latestPayment?.paymentApproved === 'declined'
+
+  const isPaymentCompleted =
+    latestPayment?.payment_completion === true ||
+    latestPayment?.payment_completion === 1 ||
+    latestPayment?.payment_completion === '1'
   const payment = latestPayment
     ? {
         transactionId: latestPayment.transactionId || latestPayment.utrNo || 'N/A',
@@ -353,6 +379,10 @@ const SKFDashboard = () => {
   }
 
   const handleMakePayment = () => {
+    if (isPaymentCompleted) {
+      return
+    }
+
     if (isFoodIncluded) {
       setShowFoodModal(true)
       return
@@ -363,6 +393,10 @@ const SKFDashboard = () => {
   }
 
   const handleProceedToPayment = () => {
+    if (isPaymentCompleted) {
+      return
+    }
+
     if (foodPreference) {
       // Save food preference to localStorage
       localStorage.setItem('foodPreference', foodPreference)
@@ -529,8 +563,12 @@ const SKFDashboard = () => {
                         <span>✓ Merchandise Voucher</span>
                       </div>
                     </div>
-                    <button className="action-btn" onClick={handleMakePayment}>
-                      <span>Make Payment</span>
+                    <button
+                      className="action-btn"
+                      onClick={handleMakePayment}
+                      disabled={isPaymentCompleted}
+                    >
+                      <span>{isPaymentCompleted ? 'Payment Completed' : 'Make Payment'}</span>
                     </button>
                   </motion.div>
 
