@@ -40,7 +40,7 @@ const performers = [
   },
       {
     id: 6,
-    name: 'Raj barman',
+    name: 'Ash King',
     role: 'Performer',
     // year: '2024',
     image: 'https://data1.ibtimes.co.in/en/full/628385/ash-king.jpg'
