@@ -5,7 +5,7 @@ import { gsap } from 'gsap'
 import './Navbar.css'
 
 const Navbar = () => {
-  const isLoginDisabled = true
+  const isLoginDisabled = false
   const [isScrolled, setIsScrolled] = useState(false)
   const [showLoginMenu, setShowLoginMenu] = useState(false)
   const logoRef = useRef(null)
