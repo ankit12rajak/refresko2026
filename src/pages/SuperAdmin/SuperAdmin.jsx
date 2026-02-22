@@ -12,6 +12,7 @@ import AdminLoginManagement from '../../components/SuperAdmin/AdminLoginManageme
 import './SuperAdmin.css'
 
 const SuperAdmin = () => {
+  const isLoginDisabled = false
   const [activeTab, setActiveTab] = useState('events')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState('')
@@ -33,6 +34,12 @@ const SuperAdmin = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault()
+
+    if (isLoginDisabled) {
+      setError('Login is temporarily disabled.')
+      return
+    }
+
     setError('')
     setLoading(true)
 
@@ -154,6 +161,7 @@ const SuperAdmin = () => {
                 required
                 autoComplete="username"
                 className="login-input"
+                disabled={isLoginDisabled || loading}
               />
             </div>
 
@@ -174,6 +182,7 @@ const SuperAdmin = () => {
                 required
                 autoComplete="current-password"
                 className="login-input"
+                disabled={isLoginDisabled || loading}
               />
             </div>
 
@@ -195,11 +204,15 @@ const SuperAdmin = () => {
             <motion.button
               type="submit"
               className="login-button interactive"
-              disabled={loading}
+              disabled={loading || isLoginDisabled}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {loading ? (
+              {isLoginDisabled ? (
+                <>
+                  LOGIN DISABLED
+                </>
+              ) : loading ? (
                 <>
                   <span className="loading-spinner"></span>
                   AUTHENTICATING...

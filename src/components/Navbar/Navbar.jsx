@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import './Navbar.css'
 
 const Navbar = () => {
+  const isLoginDisabled = true
   const [isScrolled, setIsScrolled] = useState(false)
   const [showLoginMenu, setShowLoginMenu] = useState(false)
   const logoRef = useRef(null)
@@ -105,14 +106,19 @@ const Navbar = () => {
               className="login-btn interactive"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowLoginMenu((prev) => !prev)}
+              onClick={() => {
+                if (!isLoginDisabled) {
+                  setShowLoginMenu((prev) => !prev)
+                }
+              }}
               type="button"
+              disabled={isLoginDisabled}
             >
-              LOGIN
+              {isLoginDisabled ? 'LOGIN DISABLED' : 'LOGIN'}
             </motion.button>
 
             <AnimatePresence>
-              {showLoginMenu && (
+              {!isLoginDisabled && showLoginMenu && (
                 <motion.div
                   className="login-dropdown"
                   initial={{ opacity: 0, y: -8, scale: 0.95 }}

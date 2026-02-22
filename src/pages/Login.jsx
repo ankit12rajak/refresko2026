@@ -8,6 +8,7 @@ import './Login.css'
 const normalizePhone = (value) => value.replace(/\D/g, '')
 
 const Login = () => {
+  const isLoginDisabled = true
   const navigate = useNavigate()
   const location = useLocation()
   const isAdminLoginMode = location.pathname.endsWith('/admin') || new URLSearchParams(location.search).get('role') === 'admin'
@@ -55,6 +56,12 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (isLoginDisabled) {
+      setError('Login is temporarily disabled.')
+      return
+    }
+
     setIsLoading(true)
     setError('')
 
@@ -259,7 +266,7 @@ const Login = () => {
               placeholder={isAdminLoginMode ? 'admin@skf.in' : 'BTECH\\2022\\CSE\\0001'}
               required
               className="form-input"
-              disabled={isLoading}
+              disabled={isLoading || isLoginDisabled}
             />
           </div>
 
@@ -274,20 +281,20 @@ const Login = () => {
               placeholder={isAdminLoginMode ? 'Enter your password' : 'Enter phone number'}
               required
               className="form-input"
-              disabled={isLoading}
+              disabled={isLoading || isLoginDisabled}
             />
           </div>
 
           <div className="form-options">
             <label className="checkbox-label">
-              <input type="checkbox" disabled={isLoading} />
+              <input type="checkbox" disabled={isLoading || isLoginDisabled} />
               <span>Remember me</span>
             </label>
             <a href="#" className="forgot-link">Forgot Password?</a>
           </div>
 
-          <button type="submit" className="auth-btn" disabled={isLoading}>
-            <span>{isLoading ? 'LOGGING IN...' : 'LOGIN'}</span>
+          <button type="submit" className="auth-btn" disabled={isLoading || isLoginDisabled}>
+            <span>{isLoginDisabled ? 'LOGIN DISABLED' : isLoading ? 'LOGGING IN...' : 'LOGIN'}</span>
           </button>
         </motion.form>
 

@@ -3,6 +3,14 @@ import { motion } from 'framer-motion'
 import './Login.css'
 
 const LoginSelection = () => {
+  const isLoginDisabled = true
+
+  const blockLoginNavigation = (event) => {
+    if (isLoginDisabled) {
+      event.preventDefault()
+    }
+  }
+
   return (
     <div className="auth-page">
       <div className="hex-grid-overlay" />
@@ -39,12 +47,37 @@ const LoginSelection = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.6 }}
         >
-          <Link to="/login/student" className="auth-btn" style={{ display: 'block', textDecoration: 'none', marginBottom: '16px' }}>
-            <span>STUDENT LOGIN</span>
+          <Link
+            to="/login/student"
+            className="auth-btn"
+            style={{
+              display: 'block',
+              textDecoration: 'none',
+              marginBottom: '16px',
+              opacity: isLoginDisabled ? 0.6 : 1,
+              pointerEvents: isLoginDisabled ? 'none' : 'auto',
+              cursor: isLoginDisabled ? 'not-allowed' : 'pointer'
+            }}
+            onClick={blockLoginNavigation}
+            aria-disabled={isLoginDisabled}
+          >
+            <span>{isLoginDisabled ? 'STUDENT LOGIN DISABLED' : 'STUDENT LOGIN'}</span>
           </Link>
 
-          <Link to="/login/admin" className="auth-btn" style={{ display: 'block', textDecoration: 'none' }}>
-            <span>ADMIN LOGIN</span>
+          <Link
+            to="/login/admin"
+            className="auth-btn"
+            style={{
+              display: 'block',
+              textDecoration: 'none',
+              opacity: isLoginDisabled ? 0.6 : 1,
+              pointerEvents: isLoginDisabled ? 'none' : 'auto',
+              cursor: isLoginDisabled ? 'not-allowed' : 'pointer'
+            }}
+            onClick={blockLoginNavigation}
+            aria-disabled={isLoginDisabled}
+          >
+            <span>{isLoginDisabled ? 'ADMIN LOGIN DISABLED' : 'ADMIN LOGIN'}</span>
           </Link>
         </motion.div>
       </motion.div>
