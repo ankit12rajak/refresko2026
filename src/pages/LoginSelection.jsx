@@ -4,7 +4,7 @@ import './Login.css'
 
 const LoginSelection = () => {
   const isStudentLoginDisabled = false
-  const isAdminLoginDisabled = true
+  const isAdminLoginDisabled = false
 
   const blockStudentLoginNavigation = (event) => {
     if (isStudentLoginDisabled) {

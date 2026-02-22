@@ -11,7 +11,7 @@ const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const isAdminLoginMode = location.pathname.endsWith('/admin') || new URLSearchParams(location.search).get('role') === 'admin'
-  const isLoginDisabled = isAdminLoginMode
+  const isLoginDisabled = false
   const [formData, setFormData] = useState({
     email: '',
     password: ''
