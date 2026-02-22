@@ -31,3 +31,19 @@ function now_utc(): string
 {
     return gmdate('Y-m-d H:i:s');
 }
+
+if (!function_exists('log_event')) {
+    function log_event(string $action, string $entityType, ?string $entityId = null, array $meta = [], ?string $actor = null): void
+    {
+        $payload = [
+            'timestamp' => now_utc(),
+            'action' => $action,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'actor' => $actor,
+            'meta' => $meta,
+        ];
+
+        error_log('[AUDIT] ' . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+}
