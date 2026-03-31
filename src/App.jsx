@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { Analytics } from '@vercel/analytics/react'
 import Navbar from './components/Navbar/Navbar'
 import Hero from './components/Hero/Hero'
 import About from './components/About/About'
@@ -33,6 +34,7 @@ function App() {
         <FAQ />
         <Footer />
       </div>
+      <Analytics />
     </div>
   )
 }
